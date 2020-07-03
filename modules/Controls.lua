@@ -16,14 +16,7 @@ Controls.Key = function(player, key, engine)
     player.vel[2] = 0
 
     
-    if ControlCheckU(key, iup.K_W) then
-        player.vel[2] = player.vec[1]
-        player.angle = 4
-    end
-    if ControlCheckU(key, iup.K_S) then
-        player.vel[2] = player.vec[2]
-        player.angle = 2
-    end
+    
     if ControlCheckU(key, iup.K_D) then
         player.vel[1] = player.vec[1]
         player.angle = 1
@@ -32,7 +25,15 @@ Controls.Key = function(player, key, engine)
         player.vel[1] = player.vec[2]
         player.angle = 3
     end
-
+    if ControlCheckU(key, iup.K_W) then
+        player.vel[2] = player.vec[1]
+        player.angle = 4
+    end
+    if ControlCheckU(key, iup.K_S) then
+        player.vel[2] = player.vec[2]
+        player.angle = 2
+    end
+    
 end
 
 Controls.Motion = function(player, x,y)
