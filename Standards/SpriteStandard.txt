@@ -1,0 +1,28 @@
+local Sprite = { --rgbr standard
+	r = 1; -- width and it's channel(aic)
+	g = 1; -- height aic
+	b = 1; -- horizontal offset aic
+	r1= 1; -- vertical offset aic
+	pix = "Name.format"; -- content
+};
+return Sprite
+
+--[[ how to read
+	local im = require"imlua"
+	local pic = require "File"
+	package.loaded["File"] = nil
+
+	pic.pix, err = im.FileImageLoad(pic.pix)
+	if not pic.pix then
+    		error(im.ErrorStr(err))
+	end
+	local gldata, glformat = pic.pix:GetOpenGLData()
+	gl.PixelStore(gl.UNPACK_ALIGNMENT, 1)
+
+	glu.Build2DMipmaps(pic.pix:Depth(), pic.pix:Width(), pic.pix:Height(), glformat, gl.UNSIGNED_BYTE, gldata)
+  
+-- gldata will be destroyed when the image object is destroyed
+	
+	pic.pix:Destroy()
+]]
+
