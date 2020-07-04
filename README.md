@@ -14,6 +14,7 @@ srlua https://joedf.ahkscript.org/LuaBuilds/
 
 You can build an executable by placing srlua and glue in IUP folder and then
 using this command in CMD:
+
 cd *Your repository*
 glue srlua.exe main.lua LuaEngine-player.exe
 
