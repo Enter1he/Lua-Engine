@@ -1,6 +1,6 @@
 local TPos;
-
-local Load = function(self, fold)
+local im = require"imlua"
+local function Load(self, fold)
     if fold then
         self.src = require(fold)
         package.loaded[fold] = nil
@@ -22,8 +22,7 @@ local Load = function(self, fold)
         gl.PixelStore(gl.UNPACK_ALIGNMENT, 1)
         
         gl.TexImage2D(0, pix:Depth(), pix:Width(), pix:Height(), 0, glformat, gl.UNSIGNED_BYTE, gldata)
-        --gl.BindTexture('TEXTURE_2D', self.pix[1])
-        gl.TexSubImage2D(0, 36, 54, pix:Width(), pix:Height(), glformat, gl.UNSIGNED_BYTE, gldata)
+        
         
         
         self.w = pix:Width()
@@ -43,12 +42,12 @@ local Load = function(self, fold)
     -- gldata will be destroyed when the image object is destroyed
 end
 
-local Anim = function(self, fnum)
+local function Anim(self, fnum)
     if self.src == "" then error("NO, Source Image!") end
     self.anim = fnum
 end
 
-local Draw = function(self, par)
+local function Draw (self, par)
     if self.src == "" then error("NO, Source Image!") end
     local x, y = par.pos[1]+ 1/4, par.pos[2] + 1/2
     local w, h = self.w, self.h
@@ -84,7 +83,7 @@ local Draw = function(self, par)
 
 end
 
-Sprite = {
+local Sprite = {
     w = 0;
     h = 0;
     src = "";

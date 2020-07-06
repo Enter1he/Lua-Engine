@@ -3,75 +3,73 @@ _G.new = setmetatable -- used in class creation, so I made it shoter
 _G.iup = require"iuplua"; require"iupluagl" -- adds GlCanvas to iup
 _G.gl = require"luagl"
 _G.glu = require"luaglu"
-_G.im = require"imlua"
 _G.Char = require"modules/Char"
 
-require"modules/Controls"
-
-
+_G.Controls = require"modules/Controls"
 
 iup.SetGlobal("UTF8MODE", "Yes")
-local AddScene = function(fold)
+
+
+local function AddScene(fold)
     local back = require(fold)
     package.loaded[fold] = nil
     return back
 end
 
-local Stoxy = function(s) -- converts String char pos to XYCoords
+local function StoXY(s) -- converts String char pos to XYCoords
     local i = s:find("x")
     return tonumber(s:sub(1,i-1)), tonumber(s:sub(i+1))
 end 
 
-local publ, keydown = {}, ""
 
-Engine = {dt = 1/60}
-Engine.Scenes = {
-    [0] = AddScene"Scenes/Test";
-}
-local TestLevel = Engine.Scenes[0]
---[[Final version
-    Engine.Scenes = {
-        ..some Scenes here..
-    }
-    local CurrentLevel = Engine.Scenes[1]
-    then we change CurrentLevel with 
+
+local Engine = {
+    dt = 1/60;
+    Scenes = require"Scenes.SceneEnum";
+    output = iup.glcanvas{ -- canvas for OpenGL
+        buffer="DOUBLE"; 
+        rastersize = "640x480"; -- standard resolution
     
-]]
-Engine.output = iup.glcanvas{
-    buffer="DOUBLE"; 
-    rastersize = "256x240";
-    
+    };
+    Update = iup.timer{time = 10; run = "no"};
+
 }
-
-Engine.LoopTime = iup.timer{time = 10; run = "no"}
-
 Engine.dialog = iup.dialog
-{
-    
-    Engine.output;
-    
-    title="ASCII Console"; 
-    size="640x320"; -- initial size
-    icon=0; -- use the Lua icon from the executable in Windows
-    
-}
+    {
+        
+        Engine.output;
+        
+        title="ASCII Console"; 
+        size="640x480"; -- initial size
+        icon=0; -- use the Lua icon from the executable in Windows
+        
+    };
+
+local publ, keydown = {}, "" -- first is engine's self pointer;
+-- second is for emulating keydown behaviour
+
+local CurrentLevel = AddScene(Engine.Scenes[0])
 
 
-Engine.Load = function(self)
+local function Engine_Load(self)
     publ = self
 end
 
-Engine.output.map_cb = function(self)
+
+local function output_map(self)
     iup.GLMakeCurrent(self)
     
-    TestLevel:Load()
+    CurrentLevel:Load()
 end
-local preaction
-Engine.output.action = function(self)
+
+
+
+local function output_action(self)
+    
     iup.GLMakeCurrent(self)
     gl.Clear('COLOR_BUFFER_BIT,DEPTH_BUFFER_BIT')
     local t = os.clock()
-    TestLevel:Draw()
+    CurrentLevel:Draw()
     
     self.dt = os.clock()- t
     self.dt = (self.dt >= "0.0") and self.dt or 0.015
@@ -79,12 +77,11 @@ Engine.output.action = function(self)
     gl.Flush()
     iup.GLSwapBuffers(self)
     
-    
 end
 
 
 
-Engine.output.resize_cb = function(self, width, height)
+local function output_resize_cb(self, width, height)
 
     iup.GLMakeCurrent(self)
 
@@ -100,18 +97,20 @@ Engine.output.resize_cb = function(self, width, height)
 
 end
 
-Engine.LoopTime.action_cb = function(self)
+
+local function Engine_Update(self)
     
     iup.LoopStep()
     iup.Update(publ.output)
     -- local s = iup.GetGlobal('CURSORPOS')
     -- local x, y = Stoxy(s)
-    TestLevel = TestLevel:Update(keydown, publ) or TestLevel
+    CurrentLevel = CurrentLevel:Update(keydown, publ) or CurrentLevel
     
     
 end
 
-Engine.output.keypress_cb = function(self, key, press)
+
+local function output_KeyState(self, key, press)
     
     local k = utf8.char(key)
     --simulating onkeydown event
@@ -129,17 +128,24 @@ end
 
 
 
-Engine.Loop = function(self)
+local function Engine_Loop(self)
     self.dialog:showxy(0,0)
     iup.SetFocus(self.output)
     
-    self.LoopTime.run = "yes"
+    self.Update.run = "yes"
     if (iup.MainLoopLevel() == 0) then
         iup.MainLoop()
         iup.Close()
       end
 end
 
+Engine.output.map_cb = output_map
+Engine.output.action = output_action
+Engine.output.resize_cb = output_resize_cb
+Engine.Update.action_cb = Engine_Update
+Engine.output.keypress_cb = output_KeyState
+Engine.Loop = Engine_Loop;
+Engine.Load = Engine_Load;
 Engine.__index = Engine
 
 return Engine

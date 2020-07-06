@@ -1,11 +1,11 @@
 
-Controls = {}
-local ControlCheckU = function(key, codeU)
+
+local function ControlCheckU(key, codeU)
     local codeL =  utf8.char(codeU + 32)
     codeU = utf8.char(codeU) 
     return (key:match(codeU) or key:match(codeL))
 end
-Controls.Key = function(player, key, engine)
+local function ForKeys(player, key, engine)
     
     local w, h = player.body.w, player.body.h
     local velX, velY = player.pos[1], player.pos[2]
@@ -36,13 +36,22 @@ Controls.Key = function(player, key, engine)
     
 end
 
-Controls.Motion = function(player, x,y)
+
+local function ForMouseMotion(player, x,y)
     local px, py = player.pos[1]*8, player.pos[2]*30
     local dx, dy = px-x,  py - y 
     
     player.body.angle = math.deg(math.atan(dy,dx))
 end
 
-Controls.Button = function()
+
+local function ForMouseButons()
 
 end
+
+local Controls = {
+    Button = ForMouseButons;
+    Motion = ForMouseMotion;
+    Key = ForKeys;
+}
+return Controls

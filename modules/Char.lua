@@ -1,5 +1,5 @@
 
-Sprite = require"modules/Sprite"
+local Sprite = require"modules/Sprite"
 Char = {
     player = false;
     pos = {1,1};
@@ -10,7 +10,7 @@ Char = {
     body = setmetatable({},Sprite);
     --something new adds here!!!
 }
-local Draw = function(self)
+local function Draw(self)
     self.body:Draw(self)
 end
 Char.Draw = Draw

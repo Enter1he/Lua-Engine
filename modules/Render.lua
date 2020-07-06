@@ -1,5 +1,5 @@
 
-Render = {
+local Render = {
     res = {640,480};
     field = {"", 0, 0};
     canvas = new({w = 640, h = 480},Sprite);
