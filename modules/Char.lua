@@ -1,5 +1,9 @@
 
 local Sprite = require"modules.Sprite"
+
+local function Draw(self)
+    self.body:Draw(self) --Looks strange, isn't it?
+end
 Char = {
     player = false;
     pos = {1,1};
@@ -8,11 +12,9 @@ Char = {
     vec = {1,-1};
     speed = 1;
     body = setmetatable({},Sprite);
+    Draw = Draw;
     --something new adds here!!!
 }
-local function Draw(self)
-    self.body:Draw(self)
-end
-Char.Draw = Draw
+
 Char.__index = Char
 return Char
