@@ -1,5 +1,5 @@
 
-local Sprite = require"modules/Sprite"
+local Sprite = require"modules.Sprite"
 Char = {
     player = false;
     pos = {1,1};

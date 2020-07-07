@@ -20,16 +20,14 @@ local function ForKeys(player, key, engine)
     if ControlCheckU(key, iup.K_D) then
         player.vel[1] = player.vec[1]
         player.angle = 1
-    end
-    if ControlCheckU(key, iup.K_A) then
+    elseif ControlCheckU(key, iup.K_A) then
         player.vel[1] = player.vec[2]
         player.angle = 3
     end
     if ControlCheckU(key, iup.K_W) then
         player.vel[2] = player.vec[1]
         player.angle = 4
-    end
-    if ControlCheckU(key, iup.K_S) then
+    elseif ControlCheckU(key, iup.K_S) then
         player.vel[2] = player.vec[2]
         player.angle = 2
     end

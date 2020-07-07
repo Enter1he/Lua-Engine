@@ -1,4 +1,4 @@
-
+local Sprite = require"modules.Sprite"
 local Render = {
     res = {640,480};
     field = {"", 0, 0};

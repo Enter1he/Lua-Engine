@@ -3,7 +3,6 @@ _G.new = setmetatable -- used in class creation, so I made it shoter
 _G.iup = require"iuplua"; require"iupluagl" -- adds GlCanvas to iup
 _G.gl = require"luagl"
 _G.glu = require"luaglu"
-_G.Char = require"modules/Char"
 
 _G.Controls = require"modules/Controls"
 
@@ -31,7 +30,7 @@ local Engine = {
         rastersize = "640x480"; -- standard resolution
     
     };
-    Update = iup.timer{time = 10; run = "no"};
+    Update = iup.timer{time = 15; run = "no"};
 
 }
 Engine.dialog = iup.dialog
