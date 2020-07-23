@@ -1,0 +1,29 @@
+--module standard
+-----------------------------------------	VARIABLES	-----------------------------------------
+local const; -- any variables
+local something;
+
+-----------------------------------------	FUNCTIONS	-----------------------------------------
+local function module_func() -- module function 1
+
+end
+local function module_func2() -- module function 2
+
+end
+
+
+return <value_to_return> -- can be table or function constructor
+
+			"Examples"
+(1)
+return {
+	func = module_func;
+	func2 = module_func2;
+	const = const;
+	something = something;
+}
+
+(2)
+return function()
+	print"Succesfull module!!"
+end

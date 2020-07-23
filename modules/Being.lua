@@ -1,22 +1,21 @@
 abs = math.abs
 local Sprite = require"modules.Sprite"
-local walkable = require"interfaces.walkable"
+local living = require"interfaces.living"
 local function Draw(self)
     self.body:DrawSheet(self.pos, self.angle)
 end
 
 
 
-local Actor = {
+local Being = {
     --fields
-    angle = 1;
-    body = setmetatable({},Sprite);
-
+    body = new({},Sprite);
+    
     --methods
     Draw = Draw;
     
 }
-OOP.inherit(Actor, walkable)
+OOP.inherit(Being, living)
 
 
-return OOP.class(Actor, "Char")
+return OOP.class(Being, "Being")

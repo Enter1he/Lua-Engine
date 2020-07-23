@@ -1,18 +1,25 @@
 
 local im = require"imlua"
+local gl = gl
+
 local function Load(self, fold)
     if fold then
-        self.src = require(fold)
-        package.loaded[fold] = nil
+        if package.loaded[fold] then   
+            self.src = package.loaded[fold]
+        else 
+            self.src = require(fold)
+            self.fold = fold
+        end
         -- Typical Texture Generation Using Data From file
-        local pix, err = im.FileImageLoad(self.src.pix)
-        self.pix = gl.GenTextures(2)  -- Create The Texture
+        local err;
+        self.pic, err = im.FileImageLoad(self.src.pix)
+        self.pix = gl.GenTextures(1)  -- Create The Texture
 
         
         gl.BindTexture('TEXTURE_2D', self.pix[1])
         gl.TexParameter('TEXTURE_2D','TEXTURE_MAG_FILTER','NEAREST')
         gl.TexParameter('TEXTURE_2D','TEXTURE_MIN_FILTER','NEAREST')
-        gl.TexEnv( 'TEXTURE_ENV',  'TEXTURE_ENV_MODE',  'DECAL')
+        gl.TexEnv( 'TEXTURE_ENV',  'TEXTURE_ENV_MODE',  'MODULATE')
 
         if not pix then
             error(im.ErrorStr(err))
@@ -26,7 +33,7 @@ local function Load(self, fold)
         self.w = self.src.w
         self.h = self.src.h
         
-        pix:Destroy()
+        
     else
         local pix , err = im.ImageCreate(self.w, self.h, im.BYTE, im.RGB)
         self.pix = pix
@@ -40,11 +47,11 @@ local function Anim(self, fnum)
     self.anim = fnum
 end
 
-local function Draw (self, pos, angle)
-    if self.src == "" then error("NO, Source Image!") end
-    local x, y = pos[1] + self.w*self.origin[1], pos[2] + self.h*self.origin[2]
+local function Draw (self, actor)
+    if self.src == "" then error("NO, Source image!") end
+    local x, y = actor.pos[1] - self.w*self.origin[1], actor.pos[2] - self.h*self.origin[2]
     
-    local TexPos = self.src.TPos[angle]
+    
     gl.PushMatrix()
 
         gl.Rotate(0,0, angle)
@@ -53,16 +60,19 @@ local function Draw (self, pos, angle)
         gl.PushMatrix()
     
             gl.Enable('TEXTURE_2D')
+
+            gl.Enable('BLEND')
             
             gl.BindTexture(gl.TEXTURE_2D, self.pix[1])
+            gl.Begin(gl.QUADS)
+                gl.TexCoord(0, 1); gl.Vertex(0, 0)
+                gl.TexCoord(1, 1); gl.Vertex(1, 0)
+                gl.TexCoord(1, 0); gl.Vertex(1, -1)
+                gl.TexCoord(0, 0); gl.Vertex(0, -1)
+            gl.End()
 
-                gl.Begin(gl.QUADS)
-                    gl.TexCoord(0, 1); gl.Vertex(0, 0)
-                    gl.TexCoord(1, 1); gl.Vertex(1, 0)
-                    gl.TexCoord(1, 0); gl.Vertex(1, -1)
-                    gl.TexCoord(0, 0); gl.Vertex(0, -1)
-                gl.End()
-            
+            gl.Disable('BLEND')
+
             gl.Disable('TEXTURE_2D') 
 
         
@@ -72,49 +82,66 @@ local function Draw (self, pos, angle)
 
 end
 
-local function DrawSheet(self, pos, TexPos)
-    if self.src == "" then error("NO, Source Image!") end
-    local x, y = pos[1] + self.w*self.origin[1], pos[2] + self.h*self.origin[2]
+local function DrawSheet(self, pos, idx)
+    local gl = gl
+    _ENV = self
+    if src == "" then error("NO, Source Image!") end
+    local x, y = pos[1] - w*origin[1], pos[2] + h*origin[2]
     
-    TexPos = self.src.TPos[TexPos]
+    idx = src.anim[idx]
     
     gl.PushMatrix()
 
     
         gl.Translate(x,y,0) 
-        gl.Scale(self.w, self.h, 0)
+        gl.Scale(w, h, 0)
         gl.PushMatrix()
     
             gl.Enable('TEXTURE_2D')
-            
-            gl.BindTexture(gl.TEXTURE_2D,self.pix[1])
+                
+            gl.Enable('BLEND')
 
-                gl.Begin(gl.QUADS)
-                    gl.TexCoord(TexPos[3], TexPos[2]); gl.Vertex(0, 0)
-                    gl.TexCoord(TexPos[1], TexPos[2]); gl.Vertex(1, 0)
-                    gl.TexCoord(TexPos[1], TexPos[4]); gl.Vertex(1, -1)
-                    gl.TexCoord(TexPos[3], TexPos[4]); gl.Vertex(0, -1)
-                gl.End()
-            
+            gl.BlendFunc('SRC_COLOR', 'ONE_MINUS_SRC_COLOR')
+            gl.BindTexture(gl.TEXTURE_2D,pix[1])
+            gl.Begin(gl.QUADS)
+                gl.TexCoord(idx[3], idx[2]); gl.Vertex(0, 0)
+                gl.TexCoord(idx[1], idx[2]); gl.Vertex(1, 0)
+                gl.TexCoord(idx[1], idx[4]); gl.Vertex(1, -1)
+                gl.TexCoord(idx[3], idx[4]); gl.Vertex(0, -1)
+            gl.End()
+
+            gl.Disable('BLEND')
+
             gl.Disable('TEXTURE_2D') 
-
-        
+                
         gl.PopMatrix()
 
     gl.PopMatrix()
 
 end
 
+local function Delete(self)
+    if package.loaded[self.fold] then
+        package.loaded[self.fold] = nil   
+        self.src = nil
+    end
+    self.pic:Destroy()
+end
+
 local Sprite = {
+    pos = {0,0};
+    angle = 1;
     w = 0;
     h = 0;
     src = "";
     origin = {0.5,0.5};
     anim = 0;
+    
     Load = Load;
     Anim = Anim;
     Draw = Draw;
     DrawSheet = DrawSheet;
+    Delete = Delete;
 }
 
 

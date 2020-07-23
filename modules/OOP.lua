@@ -1,3 +1,4 @@
+new = setmetatable -- used in class creation, so I made it shoter
 local function inherit(child, parent) --table, table
     for k,v in pairs(parent) do
         child[k] = v
