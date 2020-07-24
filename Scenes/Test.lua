@@ -1,6 +1,6 @@
 local Controls = require"modules.Controls"
 local Layer = require"modules.Layer"
-local Actor = require"modules.Actor"
+local Char = require"modules.Char"
 
 local npccount = 100
 
@@ -18,7 +18,7 @@ local function Load(self, engine)
                 };
                 body = self.player.body;
                 speed = 100;
-            }, Actor
+            }, Char
         )
     end
     
@@ -52,7 +52,7 @@ local function Delete(self)
     self.player.body:Delete()
 end
 local Scene = {
-    player = new({pos = {_en.screen.w*0.5,_en.screen.h*0.5}}, Actor);
+    player = new({pos = {_en.screen.w*0.5,_en.screen.h*0.5}}, Char);
     mLayer = new({}, Layer);
     sLayer = new({pos = {0,0}}, Layer);
     npc = {};

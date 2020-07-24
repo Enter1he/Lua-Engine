@@ -1,13 +1,13 @@
 abs = math.abs
 local Sprite = require"modules.Sprite"
-local living = require"interfaces.living"
+local moving = require"interfaces.moving"
 local function Draw(self)
     self.body:DrawSheet(self.pos, self.angle)
 end
 
 
 
-local Being = {
+local Char = {
     --fields
     body = new({},Sprite);
     
@@ -15,7 +15,7 @@ local Being = {
     Draw = Draw;
     
 }
-OOP.inherit(Being, living)
+OOP.inherit(Being, moving)
 
 
-return OOP.class(Being, "Being")
+return OOP.class(Char, "Char")

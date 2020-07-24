@@ -90,7 +90,7 @@ local function Patrol(self, s_pos, f_pos)
     end
 end
 
-local living = {
+local moving = {
     over = true;
     to = 1;
     pos = {0,0};
@@ -105,4 +105,4 @@ local living = {
 
 
 
-return OOP.class(living, "living")
+return OOP.class(moving, "moving")
