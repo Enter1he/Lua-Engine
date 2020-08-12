@@ -1,3 +1,5 @@
+package.cpath = "./libs/?.dll;./libs/?53.dll;"..package.cpath
+
 ---------------------------------       ENGINE_PART        ----------------------------------
 local t = os.clock()
 OOP = require"modules.OOP"
@@ -11,7 +13,7 @@ local iup = require"iuplua"; require"iupluagl" -- adds GlCanvas to iup
 local Scenes = require"Scenes.SceneEnum"
 --additional variables
 local keydown =  "" -- second is for emulating keydown behaviour
-local CurrentLevel;
+local CurrentScene;
 -- Utility functions
 
 
@@ -52,8 +54,8 @@ function output:map_cb()
     
     iup.GLMakeCurrent(self)
 
-    CurrentLevel = require(Scenes[0])
-    CurrentLevel:Load()
+    CurrentScene = require(Scenes[1])
+    CurrentScene:Load()
     
     
     iup.GLSwapBuffers(self)
@@ -65,7 +67,7 @@ end
 function output:action(x,y)
     
     iup.GLMakeCurrent(self)
-    g.DrawMain(CurrentLevel)
+    g.DrawMain(CurrentScene)
     iup.GLSwapBuffers(self)
     
 end
@@ -86,9 +88,8 @@ function update:action_cb()
     
     iup.LoopStep()
     
-    -- local s = iup.GetGlobal('CURSORPOS')
-    -- local x, y = Stoxy(s)
-    CurrentLevel = CurrentLevel:Update(keydown) or CurrentLevel
+    
+    CurrentScene = CurrentScene:Update(keydown) or CurrentScene
     iup.Update(output)
     
 end
@@ -111,10 +112,10 @@ function output:keypress_cb( key, press)
 end
 
 function dialog:destroy_cb()
-    CurrentLevel:Delete()
+    CurrentScene:Delete()
 end
 
-print("Entering time",os.clock()-t)
+
 
 return function()
     dialog:showxy(0,0)

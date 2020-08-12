@@ -2,25 +2,25 @@
 
 local function Load(self)
     
-    self.asp = _en.screen.w/_en.screen.h
-    self:CenterAt(self.pos[1] + _en.screen.w, self.pos[2] + _en.screen.h)
+    self.asp = _en[2].w/_en[2].h
+    self:CenterAt(self.pos[1] + _en[2].w, self.pos[2] + _en[2].h)
 end
 
 
-local function Draw(self, Chars)
+local function Draw(self, Objs)
     local x, y = self.pos[1], self.pos[2]
-    for i=1, #Chars do
+    for i=1, #Objs do
         gl.PushMatrix()
             
             gl.Translate(-x+0.5, -y+0.5, 0)
-            Chars[i]:Draw()
+            Objs[i]:Draw()
             
         gl.PopMatrix()
     end
 end
 
 local function CenterAt(self, x, y)
-    self.pos[1], self.pos[2] = x - _en.screen.w*0.5, y - _en.screen.h*0.5
+    self.pos[1], self.pos[2] = x - _en[2].w*0.5, y - _en[2].h*0.5
 end
 
 

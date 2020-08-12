@@ -18,6 +18,6 @@ using this command in CMD:
 cd *Your repository*
 glue srlua.exe main.lua LuaEngine-player.exe
 
-Don't forget the dlls with IUP!
+Don't forget to add IUP dlls to /libs folder!
 
 Good luck!

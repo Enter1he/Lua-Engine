@@ -40,9 +40,9 @@ local function ForMouseButons()
 
 end
 
-local Controls = {
+ 
+return {
     Button = ForMouseButons;
     Motion = ForMouseMotion;
     Key = ForKeys;
 }
-return Controls

@@ -1,31 +1,43 @@
+local dt = _en[1]
 
-local function Vel_Movement(self)
-    local sdt = self.speed * _en.dt
+
+
+
+local living = {
+    over = false;
+    to = 1;
+    pos = {0,0};
+    vel = {0,0};
+    angle = 1;
+    speed = 1;
+    
+}
+
+function living:Vel_Move()
+    local sdt = self.speed * dt
+    
     self.pos[1] = self.pos[1] + self.vel[1] * sdt
     self.pos[2] = self.pos[2] + self.vel[2] * sdt
 end
 
-local function MoveTo(self, x, y)
+function living:MoveTo( x, y)
     if self.over == false then
         local ox, oy = self.pos[1], self.pos[2]
-        local sdt = self.speed * _en.dt
+        local sdt = self.speed * dt
         
-        self.vel[1], self.vel[2] = 0, 0
-
-
-
+        
         if oy > y then self.vel[2] = -1; self.angle = 2;
         elseif oy < y then self.vel[2] = 1; self.angle = 4; end
 
         if ox > x then self.vel[1] = -1; self.angle = 3
         elseif ox < x then self.vel[1] = 1; self.angle = 1 end
         
-        self:Vel_Movement()
+        self:Vel_Move()
 
         local c1 = (self.vel[1] <= 0 and ox + self.vel[1] * sdt <= x) or (self.vel[1] >= 0 and ox + self.vel[1] * sdt >= x)
         local c2 = (self.vel[2] <= 0 and oy + self.vel[2] * sdt <= y) or (self.vel[2] >= 0 and oy + self.vel[2] * sdt >= y)
         
-        
+        self.vel[1], self.vel[2] = 0, 0
         self.pos[1] = c1 and x or self.pos[1]
         self.pos[2] = c2 and y or self.pos[2]
         self.over = c1 and c2
@@ -39,12 +51,16 @@ local function MoveTo(self, x, y)
     end
 end
 
-local function RandomMoveTo(self, from, to)
+function living:RMoveTo(from, to)
     if self.over == false then
         
         local ox, oy = self.pos[1], self.pos[2]
+        if not self.rx then
+            self.rx = math.random(from[1], from[2])
+            self.ry = math.random(to[1], to[2])
+        end
         local x, y = self.rx, self.ry
-        local sdt = self.speed * _en.dt
+        local sdt = self.speed * dt
         
         self.vel[1], self.vel[2] = 0, 0
 
@@ -56,7 +72,7 @@ local function RandomMoveTo(self, from, to)
         if ox > x then self.vel[1] = -1; self.angle = 3
         elseif ox < x then self.vel[1] = 1; self.angle = 1 end
         
-        self:Vel_Movement()
+        self:Vel_Move()
 
         local c1 = (self.vel[1] <= 0 and ox + self.vel[1] * sdt <= x) or (self.vel[1] >= 0 and ox + self.vel[1] * sdt >= x)
         local c2 = (self.vel[2] <= 0 and oy + self.vel[2] * sdt <= y) or (self.vel[2] >= 0 and oy + self.vel[2] * sdt >= y)
@@ -71,14 +87,14 @@ local function RandomMoveTo(self, from, to)
         end
         return true
     elseif self.over == true then
-        self.rx = math.random(from, to)
-        self.ry = math.random(from, to)
+        self.rx = math.random(from[1], from[2])
+        self.ry = math.random(to[1], to[2])
         self.over = false
         return self.over
     end
 end
 
-local function Patrol(self, s_pos, f_pos)
+function living:Patrol(s_pos, f_pos)
     if self.to == 1 then
         
         self.to = self:MoveTo( s_pos[1], s_pos[2]) and 1 or 2
@@ -90,6 +106,7 @@ local function Patrol(self, s_pos, f_pos)
     end
 end
 
+<<<<<<< Updated upstream:interfaces/moving.lua
 local moving = {
     over = true;
     to = 1;
@@ -106,3 +123,14 @@ local moving = {
 
 
 return OOP.class(moving, "moving")
+=======
+function living:Path(args)
+    
+    if self.to <= #args then
+        local i = self.to
+        self.to = self:MoveTo(args[i][1], args[i][2]) and i or (i + 1)
+    end
+    
+end
+return OOP.class(living, "living")
+>>>>>>> Stashed changes:interfaces/living.lua
