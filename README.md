@@ -12,6 +12,10 @@ IUP https://sourceforge.net/projects/iup/files/3.29/Tools%20Executables/Lua53/
 
 srlua https://joedf.ahkscript.org/LuaBuilds/
 
+Custom libs in /libs source code: https://github.com/Enter1he/LuaEngine---DLLs
+
+Source of release executable: https://github.com/Enter1he/Lua-Engine-Release-Exe
+
 You can build an executable by placing srlua and glue in IUP folder and then
 using this command in CMD:
 
