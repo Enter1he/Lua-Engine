@@ -110,8 +110,8 @@ function Sim:Load( engine)
     -- gen nums of flowers, humans, zombies
     math.randomseed(os.time())
     flowers = math.random(1,20)
-    humans =10
-    zombies = 0
+    humans = 10
+    zombies = math.random(1,3)
     print("flowers: "..flowers, "humans: "..humans, "zombies: "..zombies) -- print number of mobs
     
 
