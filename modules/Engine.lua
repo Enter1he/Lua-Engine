@@ -3,12 +3,18 @@ package.cpath = "./libs/?.dll;./libs/?53.dll;"..package.cpath
 ---------------------------------       ENGINE_PART        ----------------------------------
 local t = os.clock()
 OOP = require"modules.OOP"
+
 local g = require"modules.Graphics"               -- Base modules
 
 
-local iup = require"iuplua"; require"iupluagl" -- adds GlCanvas to iup
+local iup = require"iuplua"; require"iupluagl"; -- adds GlCanvas to iup
 
 
+_en ={
+    0.016666666666667;
+    {w = 640, h = 480};
+    1
+}
 
 local Scenes = require"Scenes.SceneEnum"
 --additional variables
@@ -21,6 +27,8 @@ local function StoXY(s) -- converts String char pos to XYCoords(needed for mouse
     local i = s:find("x")
     return tonumber(s:sub(1,i-1)), tonumber(s:sub(i+1))
 end 
+
+
 
 ---------------------------------       IUP_PART        ----------------------------------
 
@@ -38,13 +46,22 @@ local dialog = iup.dialog
     
     output;
     
-    title="LuaEngine-player"; 
+    fullscreen = "yes";
     size="640x480"; -- initial size
-    icon=1; -- use the Lua icon from the executable in Windows
+     -- use the Lua icon from the executable in Windows
     
 };
 local update = iup.timer{time = 16; run = "no"};
 
+
+-- FUNCTIONS FOR EXTERNAL WORK
+function Pause()
+    update.run = "no"
+end
+
+function UnPause()
+    update.run = "yes"
+end
 
 
 -- IUP CALLLBACKS
@@ -53,8 +70,8 @@ local update = iup.timer{time = 16; run = "no"};
 function output:map_cb()
     
     iup.GLMakeCurrent(self)
-
-    CurrentScene = require(Scenes[1])
+    g.MapMain()
+    CurrentScene = require(Scenes[_en[3]])
     CurrentScene:Load()
     
     
@@ -89,7 +106,8 @@ function update:action_cb()
     iup.LoopStep()
     
     
-    CurrentScene = CurrentScene:Update(keydown) or CurrentScene
+    CurrentScene:Update(keydown)
+
     iup.Update(output)
     
 end
@@ -98,9 +116,9 @@ end
 
 function output:keypress_cb( key, press)
     
-    local k = utf8.char(key)
+    local k = key < iup.K_z and utf8.char(key) or ""
     --simulating onkeydown event
-    if press == 1 then
+    if press == 1 and k ~= "" then
         
         keydown = (keydown:match(k)) and keydown or keydown.." "..k
         
@@ -117,8 +135,9 @@ end
 
 
 
-return function()
-    dialog:showxy(0,0)
+local function Engine()
+    dialog:show()
+    
     iup.SetFocus(output)
     
     update.run = "yes"
@@ -127,3 +146,4 @@ return function()
         iup.Close()
     end
 end
+return Engine

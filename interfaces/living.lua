@@ -1,21 +1,33 @@
 local dt = _en[1]
 
+local Collide = require"Collision"
 
-
+local function GetVacant(table)
+    local a = {}
+    local i = 1
+    for k,v in pairs(table) do
+        if v then
+            a[i] = v
+            i = i + 1
+        end
+    end
+    if #a == 0 then a = nil end
+    
+    return a
+end
 
 local living = {
-    over = false;
+    over = true;
     to = 1;
     pos = {0,0};
     vel = {0,0};
     angle = 1;
     speed = 1;
-    
+    sight = 1;
 }
 
 function living:Vel_Move()
     local sdt = self.speed * dt
-    
     self.pos[1] = self.pos[1] + self.vel[1] * sdt
     self.pos[2] = self.pos[2] + self.vel[2] * sdt
 end
@@ -34,8 +46,9 @@ function living:MoveTo( x, y)
         
         self:Vel_Move()
 
-        local c1 = (self.vel[1] <= 0 and ox + self.vel[1] * sdt <= x) or (self.vel[1] >= 0 and ox + self.vel[1] * sdt >= x)
-        local c2 = (self.vel[2] <= 0 and oy + self.vel[2] * sdt <= y) or (self.vel[2] >= 0 and oy + self.vel[2] * sdt >= y)
+        ox, oy = self.pos[1], self.pos[2]
+        local c1 = (self.vel[1] <= 0 and ox <= x) or (self.vel[1] >= 0 and ox >= x)
+        local c2 = (self.vel[2] <= 0 and oy <= y) or (self.vel[2] >= 0 and oy >= y)
         
         self.vel[1], self.vel[2] = 0, 0
         self.pos[1] = c1 and x or self.pos[1]
@@ -74,8 +87,9 @@ function living:RMoveTo(from, to)
         
         self:Vel_Move()
 
-        local c1 = (self.vel[1] <= 0 and ox + self.vel[1] * sdt <= x) or (self.vel[1] >= 0 and ox + self.vel[1] * sdt >= x)
-        local c2 = (self.vel[2] <= 0 and oy + self.vel[2] * sdt <= y) or (self.vel[2] >= 0 and oy + self.vel[2] * sdt >= y)
+        ox, oy = self.pos[1], self.pos[2]
+        local c1 = (self.vel[1] <= 0 and ox <= x) or (self.vel[1] >= 0 and ox >= x)
+        local c2 = (self.vel[2] <= 0 and oy <= y) or (self.vel[2] >= 0 and oy >= y)
         
         
         self.pos[1] = c1 and x or self.pos[1]
@@ -106,24 +120,59 @@ function living:Patrol(s_pos, f_pos)
     end
 end
 
-<<<<<<< Updated upstream:interfaces/moving.lua
-local moving = {
-    over = true;
-    to = 1;
-    pos = {0,0};
-    vel = {0,0};
-    angle = 1;
-    speed = 1;
-    MoveTo = MoveTo;
-    Patrol = Patrol;
-    Vel_Movement = Vel_Movement;
-    RandomMoveTo = RandomMoveTo;
-}
+function living:RandomSearch(from, to)
+    if not self.over then
+        
+        local ox, oy = self.pos[1], self.pos[2]
+        if not self.rx then
+            self.rx = math.random(from[1], from[2])
+            self.ry = math.random(to[1], to[2])
+        end
+        local x, y = self.rx, self.ry
+        local sdt = self.speed * dt
+        
+        self.vel[1], self.vel[2] = 0, 0
 
 
 
-return OOP.class(moving, "moving")
-=======
+        if oy > y then self.vel[2] = -1; self.angle = 2;
+        elseif oy < y then self.vel[2] = 1; self.angle = 4; end
+
+        if ox > x then self.vel[1] = -1; self.angle = 3
+        elseif ox < x then self.vel[1] = 1; self.angle = 1 end
+        
+        self:Vel_Move()
+        ox, oy = self.pos[1], self.pos[2]
+        local c1 = (self.vel[1] <= 0 and ox <= x) or (self.vel[1] >= 0 and ox >= x)
+        local c2 = (self.vel[2] <= 0 and oy <= y) or (self.vel[2] >= 0 and oy >= y)
+        
+        
+        self.pos[1] = c1 and x or self.pos[1]
+        self.pos[2] = c2 and y or self.pos[2]
+        self.over = c1 and c2
+        -- if self.over then
+        --     self.rx = nil
+        --     self.c.length = self.c.length - 1
+        --     self.to = self.c.length > 0 and self.to + 1 or self.to
+        -- end
+        return true
+    else
+        if self.c.length > 0 then
+            local n = self.to
+            self.rx = self.c[n].pos[1]
+            self.ry = self.c[n].pos[2]
+            self.c.length = self.c.length - 1
+        else
+            self.rx = math.random(from[1], from[2])
+            self.ry = math.random(to[1], to[2])
+            
+        end
+        self.over = false
+
+        return false
+    end
+end
+
 function living:Path(args)
     
     if self.to <= #args then
@@ -133,4 +182,3 @@ function living:Path(args)
     
 end
 return OOP.class(living, "living")
->>>>>>> Stashed changes:interfaces/living.lua

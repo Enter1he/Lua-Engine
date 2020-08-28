@@ -1,8 +1,6 @@
-gl = require"luagl"
-_en ={
-    0.016666666666667;
-    {w = 640, h = 480};
-}
+
+require"luagl"
+local gl = gl
 
 local function InitMain(width, height)
     gl.Viewport(0, 0, width, height)
@@ -17,14 +15,22 @@ local function InitMain(width, height)
 end
 
 local function DrawMain(CurrentScene)
+    
+    gl.ClearColor(0,0,0,0)
     gl.Clear('COLOR_BUFFER_BIT,DEPTH_BUFFER_BIT')
     
-    CurrentScene:Draw()
+    CurrentScene:Draw(gl)
     
     gl.Flush()
+    
+end
+
+local function MapMain()
+    gl.PixelStore(gl.UNPACK_ALIGNMENT, 1)
 end
 
 return {
     InitMain = InitMain;
     DrawMain = DrawMain;
+    MapMain = MapMain;
 }

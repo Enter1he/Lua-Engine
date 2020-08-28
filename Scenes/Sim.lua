@@ -5,21 +5,80 @@ local Sprite = require"classes.Sprite"
 local Collide = require"Collision"
 
 
-local dt, screen =_en[1], _en[2]
+local dt, screen, iup =_en[1], _en[2], _en[3]
 
 local flowers, humans, zombies, npc, player, flosprite, humarite, zombarite;
-
+local timer = 0;
 local walk = {1,2,3,4,3,2,1,5,6,7,6,5}
+Mob.body = nil
 
-local function ClearFlowers(t)
-    for i = 1, npc.length-zombies do
-        if not t[i] then
-            table.remove(t, i)
-            npc.length = npc.length - 1
+
+
+
+local function Npc_Update()
+    local a, b;
+    local i = npc.length
+    while i > flowers do
+        a = npc[i]
+        if a then
+            
+            if a.__name == 'human' then
+                a:RMoveTo({50,screen.w-50}, {0,screen.h-60})
+                local j = flowers
+                while j > 0 do
+                    b = npc[j]
+                    if b.body then 
+                        
+                        local ax, ay = a.pos[1] - a.body.w*a.body.origin[1], a.pos[2] + a.body.h*a.body.origin[2]
+                        local bx, by = b.pos[1] - b.body.w*b.body.origin[1], b.pos[2] + b.body.h*b.body.origin[2]
+                        if Collide.CtC(a.pos[1], a.pos[2], a.sight, b.pos[1], b.pos[2], b.w) then
+                            a.rx, a.ry = b.pos[1], b.pos[2]
+                        end
+                        if Collide.CtC(ax, ay-10, 20, bx, by, 20) then
+                            a.over = true
+                            j = j - 1
+                            b.body = nil
+                        end
+                        
+                    end
+                    j = j - 1
+                end
+                
+
+            elseif a.__name == 'zombie' then
+                a:RMoveTo({50,screen.w-50}, {0,screen.h-60})
+                for j = flowers+1, npc.length - zombies do
+                    b = npc[j]
+                    if b then
+                        local ax, ay = a.pos[1] - a.body.w*a.body.origin[1], a.pos[2] + a.body.h*a.body.origin[2]
+                        local bx, by = b.pos[1] - b.body.w*b.body.origin[1], b.pos[2] + b.body.h*b.body.origin[2]
+                        if Collide.CtC(ax, ay, 20, bx, by, 12) then
+                            b.body = zombarite
+                            b.__name = 'zombie'
+                        end    
+                    end
+                    
+                end
+            end
         end
-    end
-end
 
+        i = i - 1
+        
+    end
+    -- timer = timer + dt
+    -- if timer >= 1 then
+    --     os.execute('cls')
+    --     for i = flowers+1, npc.length do
+    --         local o = npc[i]
+    --         if o then
+    --             print(i-flowers,o, o.rx, o.ry, o.over)
+    --         else
+    --             print(i-flowers,o)
+    --         end
+    --     end
+    --     timer = 0
+    -- end
+end
 
 local function WalkDraw(self, obj)
     self:DrawAnim(obj,  walk)
@@ -43,113 +102,88 @@ local Sim = {
 }
 
 function Sim:Load( engine)
-    math.randomseed(os.time())
-    npc = self.npc
     
+    npc = self.npc
     player = new({pos = {screen.w*0.5,screen.h*0.5}}, Mob)
     player.speed = 100
 
     -- gen nums of flowers, humans, zombies
+    math.randomseed(os.time())
     flowers = math.random(1,20)
-    humans = math.random(1,20)
-    zombies = math.random(1,20)
-    print("flowers: "..flowers, "humans: "..humans, "zombies: "..zombies)
+    humans =10
+    zombies = 0
+    print("flowers: "..flowers, "humans: "..humans, "zombies: "..zombies) -- print number of mobs
     
-    flosprite, humarite, zombarite = new({Draw = Sprite.DrawSheet}, Sprite), new({Draw = WalkDraw}, Sprite), new({Draw = WalkDraw}, Sprite)
+
+    ----------------------------------------------ADDING TETURES----------------------------------------------------------------
+    flosprite, humarite, zombarite = new({Draw = Sprite.DrawSheet, color = {0,1,0}}, Sprite),
+                                     new({Draw = WalkDraw, color = {0,0,1}}, Sprite), 
+                                     new({Draw = WalkDraw, color = {1,0,0}}, Sprite)
     flosprite:Load"Resources/Flower/Flower"
     humarite:Load"Resources/St_Ava/Avatar1"
     zombarite:Load"Resources/Zomb/Zombie"
-    npc.length = flowers+humans+zombies
-    -- create mobs
+
+
+--------------------------------------------------CREATING MOBS-------------------------------------------------------------------
+    npc.length = 0
     for i = 1, flowers do
         
         local x, y = math.random(50,screen.w-50), math.random(0,screen.h-60)
         npc[i] = new({__name = "flower"; pos = {x,y}}, Mob) 
         npc[i].body = flosprite
+        
+    end
+    npc.length = npc.length + flowers
+
+    for i = 1, humans do
+        local n = npc.length + i
+        local x, y = math.random(50,screen.w-50), math.random(0,screen.h-60)
+        npc[n] = new({__name = "human"; pos = {x,y}; RMoveTo = Mob.RMoveTo; Vel_Move = Mob.Vel_Move,  sight = 100}, Mob) -- c is a collect table fo AI
+        npc[n].body = humarite
+        npc[n].speed = 100
+        
+    end
+    npc.length = npc.length + humans
+
+    if zombies > 0 then
+        for i = 1, zombies do
+            local n = npc.length + i
+            local x, y = math.random(50,screen.w-50), math.random(0,screen.h-60)
+            npc[n] = new({__name = "zombie"; pos = {x,y}; RMoveTo = Mob.RMoveTo; Vel_Move = Mob.Vel_Move}, Mob) 
+            npc[n].body = zombarite
+            npc[n].speed = 50
+            
+        end
+        npc.length = npc.length + zombies
     end
     
-    for i = flowers+1, flowers+humans do
-        
-        local x, y = math.random(50,screen.w-50), math.random(0,screen.h-60)
-        npc[i] = new({__name = "human"; pos = {x,y}; MoveTo = Mob.RMoveTo; Vel_Move = Mob.Vel_Move}, Mob) 
-        npc[i].body = humarite
-        npc[i].speed = 100
-        
-    end
-    for i = npc.length - zombies - 1, npc.length do
-        
-        local x, y = math.random(50,screen.w-50), math.random(0,screen.h-60)
-        npc[i] = new({__name = "zombie"; pos = {x,y}; MoveTo = Mob.RMoveTo; Vel_Move = Mob.Vel_Move}, Mob) 
-        npc[i].body = zombarite
-        npc[i].speed = 50
-        
-    end
-
 end
 
 function Sim:Update( key)
     Controls.Key(player,key)
     player:Vel_Move()
-    local a, b;
-    for i = flowers+1, #npc do
-        a = npc[i]
-        a:RMoveTo({50,screen.w-50}, {0,screen.h-60})
-        if a.__name == 'human' then
-            
-            for j = 1, flowers do
-                b = npc[j]
-                if not b then
-                    goto skip
-                end
-                if Collide.CtC(a.pos[1], a.pos[2], 20, b.pos[1], b.pos[2], 12) then
-                    npc[j] = nil
-                    flowers = flowers - 1
-                    
-                end
-                ::skip::
-            end
-            
-        elseif a.__name == 'zombie' then
-            for j = flowers+1, npc.length - zombies do
-                b = npc[j]
-                
-                if Collide.CtC(a.pos[1], a.pos[2], 20, b.pos[1], b.pos[2], 12) then
-                    b.body = zombarite
-                    b.__name = 'zombie'
-                    npc[npc.length+1] = npc[j]
-                    humans = humans - 1
-                    zombies = zombies + 1 
-                    table.remove(npc, j)
-                end
-                ::skip::
-            end
-        end
-    end
-    ClearFlowers(npc)
     
+    Npc_Update()
 end
 
-function Sim:Draw()
+function Sim:Draw(gl)
     local x, y = player.pos[1] - screen.w*0.5, player.pos[2] - screen.h*0.5
     local obj;
     do -- Layer 1
-        for i=1, #npc do
+        for i=1, npc.length do
             obj = npc[i]
-            gl.PushMatrix()
-                
-                gl.Translate(-x+0.5, -y+0.5, 0)
-                if obj.__name == 'flower' then
-                    gl.Color(0,1,0)
-                elseif obj.__name == 'human' then
-                    gl.Color(0,0,1)
-                elseif obj.__name == 'zombie' then
-                    gl.Color(1,0,0)
-                end
-                obj.body:Draw(obj)
-                
-            gl.PopMatrix()
+            if obj.body then
+                gl.PushMatrix()
+                    
+                    gl.Translate(-x+0.5, -y+0.5, 0)
+                    
+                    obj.body:Draw(obj)
+                    
+                gl.PopMatrix()
+            end
         end
     end
+    
 end
 
 function Sim:Delete()
@@ -159,10 +193,7 @@ function Sim:Delete()
 end
 
 
--- Sim.Load = Load
--- Sim.Update = Update
--- Sim.Draw = Draw
--- Sim.Delete = Delete
+
 
 
 
