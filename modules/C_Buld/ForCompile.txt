@@ -1,3 +1,0 @@
-gcc File.c -o File.exe -LC:\Users\1367848\Desktop\lua\Traveller_demo -llua53
-gcc -O2 -c -o GetKey.o GetKey.c
-gcc -O -shared -o GetKey.dll LuaLib.o -LC:\Users\1367848\Desktop\lua\Traveller_demo -llua53
