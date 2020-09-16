@@ -2,19 +2,6 @@ local dt = _en[1]
 
 local Collide = require"Collision"
 
-local function GetVacant(table)
-    local a = {}
-    local i = 1
-    for k,v in pairs(table) do
-        if v then
-            a[i] = v
-            i = i + 1
-        end
-    end
-    if #a == 0 then a = nil end
-    
-    return a
-end
 
 local living = {
     over = true;
@@ -25,6 +12,14 @@ local living = {
     speed = 1;
     sight = 1;
 }
+
+function living:Stop()
+    self.vel[1] = 0; self.vel[2] = 0;
+end
+
+function living:Liberate()
+    self.vel = {0,0}
+end
 
 function living:Vel_Move()
     local sdt = self.speed * dt
@@ -38,11 +33,11 @@ function living:MoveTo( x, y)
         local sdt = self.speed * dt
         
         
-        if oy > y then self.vel[2] = -1; self.angle = 2;
-        elseif oy < y then self.vel[2] = 1; self.angle = 4; end
+        if oy > y then self.vel[2] = -1; 
+        elseif oy < y then self.vel[2] = 1;  end
 
-        if ox > x then self.vel[1] = -1; self.angle = 3
-        elseif ox < x then self.vel[1] = 1; self.angle = 1 end
+        if ox > x then self.vel[1] = -1; 
+        elseif ox < x then self.vel[1] = 1; end
         
         self:Vel_Move()
 
@@ -79,11 +74,11 @@ function living:RMoveTo(from, to)
 
 
 
-        if oy > y then self.vel[2] = -1; self.angle = 2;
-        elseif oy < y then self.vel[2] = 1; self.angle = 4; end
+        if oy > y then self.vel[2] = -1; 
+        elseif oy < y then self.vel[2] = 1;  end
 
-        if ox > x then self.vel[1] = -1; self.angle = 3
-        elseif ox < x then self.vel[1] = 1; self.angle = 1 end
+        if ox > x then self.vel[1] = -1; 
+        elseif ox < x then self.vel[1] = 1; end
         
         self:Vel_Move()
 
@@ -181,4 +176,4 @@ function living:Path(args)
     end
     
 end
-return OOP.class(living, "living")
+return OOP.class('living', living)

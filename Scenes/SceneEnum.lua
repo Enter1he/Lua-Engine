@@ -1,6 +1,5 @@
 local SceneEnum = {
-    [0] = "Scenes.Test";
-    [1] = "Scenes.Sim"
+    [1] = "Scenes.Sim.root"
     --Spare place
 }
 

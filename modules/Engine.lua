@@ -1,27 +1,23 @@
-package.cpath = "./libs/?.dll;./libs/?53.dll;"..package.cpath
+
 
 ---------------------------------       ENGINE_PART        ----------------------------------
-local t = os.clock()
+
 OOP = require"modules.OOP"
 
 local g = require"modules.Graphics"               -- Base modules
+require"modules.Controls"
 
+require"iuplua"; require"iupluagl"; -- adds GlCanvas to iup
 
-local iup = require"iuplua"; require"iupluagl"; -- adds GlCanvas to iup
-
-
-_en ={
-    0.016666666666667;
-    {w = 640, h = 480};
-    1
-}
+require"config"
 
 local Scenes = require"Scenes.SceneEnum"
 --additional variables
-local keydown =  "" -- second is for emulating keydown behaviour
+local key, down = {},0
 local CurrentScene;
 -- Utility functions
 
+Graphics = g.Drawing
 
 local function StoXY(s) -- converts String char pos to XYCoords(needed for mouse pos convert)
     local i = s:find("x")
@@ -46,22 +42,23 @@ local dialog = iup.dialog
     
     output;
     
-    fullscreen = "yes";
+    fullscreen = "no";
     size="640x480"; -- initial size
      -- use the Lua icon from the executable in Windows
     
 };
 local update = iup.timer{time = 16; run = "no"};
 
-
+local pausef = 0
 -- FUNCTIONS FOR EXTERNAL WORK
 function Pause()
-    update.run = "no"
+    if update.run == 'no' then
+        update.run = 'yes'
+    elseif update.run == 'yes' then
+        update.run = 'no'
+    end
 end
 
-function UnPause()
-    update.run = "yes"
-end
 
 
 -- IUP CALLLBACKS
@@ -103,10 +100,7 @@ end
 
 function update:action_cb()
     
-    iup.LoopStep()
-    
-    
-    CurrentScene:Update(keydown)
+    CurrentScene:Update(key, down)
 
     iup.Update(output)
     
@@ -114,18 +108,15 @@ end
 
 
 
-function output:keypress_cb( key, press)
-    
-    local k = key < iup.K_z and utf8.char(key) or ""
-    --simulating onkeydown event
-    if press == 1 and k ~= "" then
-        
-        keydown = (keydown:match(k)) and keydown or keydown.." "..k
-        
-    else
-
-        keydown = (keydown:match(k)) and keydown:gsub(" "..k, "") or keydown
-    
+function output:keypress_cb( k, d)
+    if d == 1 then
+        key[k] = k; 
+    elseif d == 0 then
+        key[k] = nil
+    end
+    down = d
+    if d == 1 then
+        Controls.Command(k)
     end
 end
 

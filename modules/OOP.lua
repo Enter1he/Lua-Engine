@@ -16,9 +16,9 @@ local function methods(parent, ex)
         ex[k] = type(v) == 'function' and v
     end
 end
-local function class(o, name) --table
+local function class(name, o) --table
     o.__index = o 
-    o.__name = name
+    o.__name = name or '<unnamed>'
     return o
 end
 
@@ -28,6 +28,6 @@ local OOP = {
     class = class;
     inherit = inherit;
     methods = methods;
-    SetCallbacks = SetCallbacks;
+    
 }
 return OOP

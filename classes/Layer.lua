@@ -37,4 +37,4 @@ local Layer = {
 
 
 
-return OOP.class(Layer, "Layer")
+return OOP.class('Layer', Layer)

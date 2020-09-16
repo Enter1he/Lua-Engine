@@ -1,30 +1,16 @@
+local Buttons = {
+}
+local Commands = {
 
+}
 
-local function ControlCheckU(key, codeU)
-    local codeL =  utf8.char(codeU + 32)
-    codeU = utf8.char(codeU) 
-    return (key:match(codeU) or key:match(codeL))
-end
-local function ForKeys(player, key)
-    -- Just for example
-    player.vel[1] = 0
-    player.vel[2] = 0
+local function ForKeys( key, down)
     
-    if ControlCheckU(key, iup.K_D) then
-        player.vel[1] = 1
-        player.angle = 1
-    elseif ControlCheckU(key, iup.K_A) then
-        player.vel[1] = -1
-        player.angle = 3
+    for keys in pairs(key) do
+        if Buttons[keys] then
+            Buttons[keys]()
+        end
     end
-    if ControlCheckU(key, iup.K_W) then
-        player.vel[2] = 1
-        player.angle = 4
-    elseif ControlCheckU(key, iup.K_S) then
-        player.vel[2] = -1
-        player.angle = 2
-    end
-    
 end
 
 
@@ -35,14 +21,39 @@ local function ForMouseMotion(player, x,y)
     player.body.angle = math.deg(math.atan(dy,dx))
 end
 
+local function ForCommands(key)
+    if Commands[key] then
+        Commands[key]()
+    end
+end
+
+local function AddButton(code, func)
+    if code >= iup.K_A and code <= iup.K_Z then
+        Buttons[code] = func
+        Buttons[code+32] = func
+    elseif code >= iup.K_a and code <= iup.K_z then
+        Buttons[code] = func
+        Buttons[code-32] = func
+    else
+        Buttons[code] = func
+    end
+end
+
+local function AddCommand(code, func)
+    Commands[code] = func
+end
+
 
 local function ForMouseButons()
 
 end
 
  
-return {
+Controls = {
     Button = ForMouseButons;
     Motion = ForMouseMotion;
     Key = ForKeys;
+    Command = ForCommands;
+    AddCommand = AddCommand;
+    AddButton = AddButton;
 }
