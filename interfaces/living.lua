@@ -13,12 +13,29 @@ local living = {
     sight = 1;
 }
 
+function living:BaseBuilder()
+
+    self.over = true
+    self.to = 1
+    self.pos = {0,0}
+    self.vel = {0,0}
+    self.Stop = living.Stop
+    self.isMoving = living.isMoving
+    self.Vel_Move = living.Vel_Move
+    self.MoveTo = living.MoveTo
+
+end
+
 function living:Stop()
     self.vel[1] = 0; self.vel[2] = 0;
 end
 
 function living:Liberate()
     self.vel = {0,0}
+end
+
+function living:isMoving()
+    return self.vel[1] ~= 0 or self.vel[2] ~= 0
 end
 
 function living:Vel_Move()

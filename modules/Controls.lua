@@ -28,16 +28,17 @@ local function ForCommands(key)
 end
 
 local function AddButton(code, func)
-    if code >= iup.K_A and code <= iup.K_Z then
-        Buttons[code] = func
+    
+    if code > 64 and code < 91 then
         Buttons[code+32] = func
-    elseif code >= iup.K_a and code <= iup.K_z then
-        Buttons[code] = func
+    elseif code > 96 and code < 123 then
         Buttons[code-32] = func
     else
         Buttons[code] = func
     end
 end
+
+
 
 local function AddCommand(code, func)
     Commands[code] = func
@@ -48,12 +49,12 @@ local function ForMouseButons()
 
 end
 
- 
+
 Controls = {
     Button = ForMouseButons;
     Motion = ForMouseMotion;
     Key = ForKeys;
     Command = ForCommands;
     AddCommand = AddCommand;
-    AddButton = AddButton;
+    AddKey = AddButton;
 }

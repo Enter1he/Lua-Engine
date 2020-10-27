@@ -6,6 +6,7 @@ local Sprite = {
     color = {1,1,1,1};
     frame = 1;
     rate = 0;
+    angle = 0;
 }
 
 

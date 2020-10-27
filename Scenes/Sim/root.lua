@@ -10,51 +10,39 @@ local dt, screen, iup =_en[1], _en[2], _en[4]
 
 local flowers, humans, zombies, npc, player, flosprite, humarite, zombarite;
 local text = new({Draw = Graphics.DrawTextListed, value = "fr\nam\ne:", pos = {10, 50}, font = Fonts.."consola.ttf", size = 36, color = {1,1,1,1}}, Text)
-local timer = 1;
+
 local walk = {1,2,3,2,1,5,6,5, frame = 1}
+
+
 
 Controls.AddButton(iup.K_A, 
     function()
         player.vel[1] = -1
-        player.angle = 3
+        
     end
 )
 Controls.AddButton(iup.K_D, 
     function()
         player.vel[1] = 1
-        player.angle = 1
+        
     end
 )
 Controls.AddButton(iup.K_W, 
     function()
         player.vel[2] = 1
-        player.angle = 4
+        
     end
 )
 Controls.AddButton(iup.K_S, 
     function()
         player.vel[2] = -1
-        player.angle = 2
+        
     end
 )
 
-Controls.AddCommand(iup.K_E,
-    function()
-        humarite.frame = humarite.frame + 1
-    end
-)
 
-Controls.AddCommand(iup.K_Q,
-    function()
-        humarite.frame = humarite.frame - 1
-    end
-)
+Controls.AddCommand(iup.K_ESC, _Close)
 
-Controls.AddCommand(iup.K_ESC, 
-    function()
-        iup.Close()
-    end
-)
 local paused = false
 Controls.AddCommand(iup.K_CR, 
     function()
@@ -78,7 +66,7 @@ local Sim = {
 function Sim:Load()
     
     npc = self.npc
-    player = new({Stop = Mob.Stop,pos = {screen.w*0.5,screen.h*0.5}}, Mob)
+    player = new({Stop = Mob.Stop,pos = {0,0}, vel = {0,0}}, Mob)
     player.speed = 100
     text:LoadList()
     -- gen nums of flowers, humans, zombies
@@ -97,7 +85,6 @@ function Sim:Load()
     flosprite:Load"Scenes/Sim/Resources/Flower/Flower.png"
     humarite:Load"Scenes/Sim/Resources/St_Ava/Avatar1"
     zombarite:Load"Scenes/Sim/Resources/Zomb/Zombie"
-
     
 --------------------------------------------------CREATING MOBS-------------------------------------------------------------------
     npc.length = 0
@@ -218,29 +205,33 @@ local function Npc_Update()
     end
 end
 
-function Sim:Update( key, down)
-    player:Stop()
-    Controls.Key( key, down)
-    player:Vel_Move()
-    
+function Sim:Update()
+
     if not paused then
         Npc_Update()
     end
+    
 end
 
-
+function Sim:KeyPress(key, down)
+    player:Stop()
+    Controls.Key(key, down)
+    player:Vel_Move()
+end
 
 function Sim:Draw(gl)
-    local x, y = player.pos[1] - screen.w*0.5, player.pos[2] - screen.h*0.5
+    local x, y = player.pos[1], player.pos[2] 
     local obj;
+    local mx, my = _mouse[1] + x//1, _mouse[2] - y//1
+    text.value = (x.." "..y)
     do -- Layer 1
         for i=1, npc.length do
             obj = npc[i]
-            
             if obj then
                 if obj.tex then
                     gl.PushMatrix()
-                        gl.Translate(-x+0.5, -y+0.5, 0)
+                        gl.Translate(-x, -y, 0)
+                        gl.Rect(0,0, 20, 20)
                         obj:Draw()
                         text:Draw()
                     gl.PopMatrix()
@@ -252,7 +243,6 @@ function Sim:Draw(gl)
 end
 
 function Sim:Delete()
-    timer = nil
      
 end
 

@@ -3,7 +3,6 @@ Pure Lua Engine
 
 IUP 3.29 for lua 5.3 required for interpretation
 
-Now supports text with freetype2!!!
 
 Building advice 
 
@@ -14,8 +13,6 @@ IUP https://sourceforge.net/projects/iup/files/3.29/Tools%20Executables/Lua53/
 srlua https://joedf.ahkscript.org/LuaBuilds/
 
 Custom libs in /libs source code: https://github.com/Enter1he/LuaEngine---DLLs
- 
- -freetype2 needed for Fonting.dll so it's .dll included
 
 Source of release executable: https://github.com/Enter1he/Lua-Engine-Release-Exe
 

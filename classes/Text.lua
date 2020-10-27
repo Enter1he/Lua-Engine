@@ -3,7 +3,7 @@
 
 
 local Text = {
-    value = 'Some text';
+    value = 'Some text.';
     font = Fonts.."arial.ttf";
     size = 12;
     pos = {0,0};

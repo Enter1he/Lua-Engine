@@ -1,5 +1,11 @@
+Scene = OOP.enum(
+    "Sim",
+    "TDS"
+)
+
 local SceneEnum = {
-    [1] = "Scenes.Sim.root"
+    [Scene.Sim] = "Scenes.Sim.root";
+    [Scene.TDS] = "Scenes.TDS.root";
     --Spare place
 }
 

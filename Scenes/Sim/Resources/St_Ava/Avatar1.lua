@@ -1,8 +1,8 @@
-local Sprite = { --rgbr standard
+return { --rgbr standard
 	w = 32;
 	h = 54;
 
-	pix = ".png";
+	fmt = ".png";
 	numf = 28;
 	anim = {
 		
@@ -19,4 +19,3 @@ local Sprite = { --rgbr standard
 		-- {0.73015873015873, 0.5, 0.35714285714286, 0};
 	}
 }
-return Sprite
