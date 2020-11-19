@@ -8,13 +8,14 @@ local ft2 = require"Fonting"
 Sprite = require"classes.Sprite"
 
 
+
 local function InitMain(width, height)
     gl.Viewport(0, 0, width, height)
     
     gl.MatrixMode('PROJECTION')
     gl.LoadIdentity()
 
-    gl.Ortho(0, _en[2].w, _en[2].h, 0, 1,0);
+    gl.Ortho(0, _en.screen.w, _en.screen.h, 0, 1,0);
 
     gl.MatrixMode('MODELVIEW')
     gl.LoadIdentity()
@@ -38,13 +39,13 @@ end
 
 
 local Drawings = {
-    DrawSprite = require"DrawSprite";
+    
     LoadText = EmptyFunc;
     DrawText = EmptyFunc;
     LoadTextListed = EmptyFunc;
     DrawTextListed = EmptyFunc;
     LoadSprite = EmptyFunc;
-    DrawSpriteAnim = EmptyFunc;
+    DrawSprite = require"DrawSprite";
     LoadSpriteSheet = EmptyFunc;
     DrawSpriteSheetAnim = EmptyFunc;
     CopySprite = EmptyFunc;
@@ -244,13 +245,15 @@ function Drawings.LoadSprite(sprite, fold)
     end
 end
 
-function Drawings.LoadSpriteSheet(sprite, fold)
+
+function Drawings.LoadSpriteSheet(sprite, fold, blend)
     if fold then
         if package.loaded[fold] then   
             sprite.src = package.loaded[fold]
         else 
             sprite.src = require(fold)
         end
+        blend = blend or 'none'
         -- Typical Texture Generation Using Data From file
         
         local pic, err = im.FileImageLoad(fold..sprite.src.fmt)
@@ -271,28 +274,30 @@ function Drawings.LoadSpriteSheet(sprite, fold)
         local anim = sprite.src.anim
         sprite.w = sprite.src.w
         sprite.h = sprite.src.h
+
+        local SRC, ONE = (blend == 'alpha') and 'SRC_ALPHA' or 'SRC_COLOR', (blend == 'alpha') and 'ONE_MINUS_SRC_ALPHA' or 'ONE_MINUS_SRC_COLOR'
         for i = 1, #anim do
             local a = anim[i]
-            local la = a[5]
-            local n = (i-1)*la
+            local la = a[5] or 1
+            local n = (i-1)*la-1
             
-            for j = 1, la-1 do 
+            for j = 1, la do 
                 
                 gl.NewList(sprite.list+j+n , gl.COMPILE)
-                
-                    gl.Enable('TEXTURE_2D'); gl.Enable('BLEND');
-
-                    gl.BlendFunc('SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA')
+                    if blend ~= 'none' then
+                        gl.Enable('TEXTURE_2D'); gl.Enable('BLEND');
+                        gl.BlendFunc(SRC, ONE)
+                    end
                     gl.BindTexture(gl.TEXTURE_2D, sprite.tex[1])
                     gl.Begin(gl.QUADS)
                         gl.TexCoord(a[1] + a[3]*(j-1), a[2]); gl.Vertex(0, 0)
-                        gl.TexCoord(a[3]*j, a[2]);            gl.Vertex(-1, 0)
-                        gl.TexCoord(a[3]*j, a[4]);            gl.Vertex(-1, 1)
-                        gl.TexCoord(a[1] + a[3]*(j-1), a[4]); gl.Vertex(0, 1)
+                        gl.TexCoord(a[3]*j, a[2]);            gl.Vertex(1, 0)
+                        gl.TexCoord(a[3]*j, a[4]);            gl.Vertex(1, -1)
+                        gl.TexCoord(a[1] + a[3]*(j-1), a[4]); gl.Vertex(0, -1)
                     gl.End()
-
-                    gl.Disable('BLEND'); gl.Disable('TEXTURE_2D'); 
-                       
+                    if blend ~= 'none' then
+                        gl.Disable('BLEND'); gl.Disable('TEXTURE_2D'); 
+                    end
                 gl.EndList()
             end
         end
@@ -302,8 +307,12 @@ function Drawings.LoadSpriteSheet(sprite, fold)
     end
 end
 
+-- DRAWSPRITE FUNCTION IS LOADING FROM MODULE on line: 48
+local pos = {0,0}
+
 function Drawings.DrawSpriteSheetAnim(sprite)
     
+    sprite.pos = sprite.pos or pos
     local x, y, offx, offy = sprite.pos[1], sprite.pos[2], sprite.w*sprite.origin[1], sprite.h*sprite.origin[2]
     
     gl.PushMatrix()
@@ -317,41 +326,6 @@ function Drawings.DrawSpriteSheetAnim(sprite)
 
 end
 
-function Drawings.DrawSpriteAnim(sprite, anim)
-
-    local pos = sprite.pos
-    if sprite.src == "" then error("NO, Source Image!") end
-    local x, y = pos[1] - sprite.w*sprite.origin[1], pos[2] + sprite.h*sprite.origin[2]
-    
-    local idx = sprite.src.anim[idx]
-    local j = anim[sprite.frame]
-    
-    gl.PushMatrix()
-
-        gl.Color(sprite.color[1], sprite.color[2], sprite.color[3])
-        gl.Translate(x,y,0)
-        gl.Scale(sprite.src.w, sprite.src.h, 0)
-    
-            gl.Enable('TEXTURE_2D')
-                
-            gl.Enable('BLEND')
-
-            gl.BlendFunc('SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA')
-            gl.BindTexture(gl.TEXTURE_2D,sprite.tex[1])
-            gl.Begin(gl.QUADS)
-                gl.TexCoord(idx[1] + idx[3]*(j-1), idx[2]); gl.Vertex(0, 0)
-                gl.TexCoord(idx[3]*j, idx[2]);              gl.Vertex(-1, 0)
-                gl.TexCoord(idx[3]*j, idx[4]);              gl.Vertex(-1, 1)
-                gl.TexCoord(idx[1] + idx[3]*(j-1), idx[4]); gl.Vertex(0, 1)
-            gl.End()
-
-            gl.Disable('BLEND')
-
-            gl.Disable('TEXTURE_2D') 
-                
-    gl.PopMatrix()
-
-end
 
 function Drawings.CopySprite(sprite, s)
     sprite.tex = s.tex;

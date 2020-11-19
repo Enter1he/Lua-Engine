@@ -1,10 +1,9 @@
-local dead = require"interfaces.dead"
+
 
 local item = {
-    
+    pos = {0,0};
 }
 
-OOP.inherit(item, dead)
 OOP.inherit(item, Sprite)
 
 return OOP.class('item', item)

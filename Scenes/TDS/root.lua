@@ -6,9 +6,9 @@ local sW, sH, aH = _en[2].w, _en[2].h
 
 
 local player = { 
-    pos = {30,30};
-    origin = {0.5, 0.39};
-    angle = 180;
+    pos = {60,50};
+    origin = {0.5, -0.4};
+    angle = 0;
     frame = 1;
     rate = 0;
     af = 0;
@@ -27,10 +27,6 @@ local text = new(
 }, Text)
 
 
-Controls.AddKey(iup.K_W, EmptyFunc)
-Controls.AddKey(iup.K_S, EmptyFunc)
-Controls.AddKey(iup.K_A, EmptyFunc)
-Controls.AddKey(iup.K_D, EmptyFunc)
 
 
 Controls.AddCommand(iup.K_ESC, _Close)
@@ -78,18 +74,11 @@ function TDS:Load()
     new(player, Mob)
     
     text:LoadList()
-    player:Load"Scenes/TDS/Resources/player/TopDownMen"
+    player:Load("Scenes/TDS/res/player/TopDownMen", 'alpha')
     step = player.src.anim
     player.w = player.w + player.w
     player.h = player.h + player.h
     text.value = tostring(iup.K_z)
-end
-
-function TDS:Draw(gl)
-    
-    player:Draw()
-    text:Draw()
-    
 end
 
 function TDS:Update()
@@ -102,25 +91,33 @@ function TDS:Update()
     player.walk = false
 end
 
+function TDS:Draw(gl)
+    
+    player:Draw()
+    text:Draw()
+    
+end
+
 function TDS:KeyPress(key, down)
     
     player:Stop()
-    if key[iup.K_W] or key[iup.K_w] then
-        player.vel[2] = -1
-        player.anim = 1
-        
-    end
+    
     if key[iup.K_S] or key[iup.K_s] then
         player.vel[2] = 1
-        player.anim = 16
+        player.anim = 15
     end
     if key[iup.K_A] or key[iup.K_a] then
         player.vel[1] = -1
-        player.anim = 6
+        player.anim = 5
     end
     if key[iup.K_D] or key[iup.K_d] then
         player.vel[1] = 1
-        player.anim = 11
+        player.anim = 10
+    end
+    if key[iup.K_W] or key[iup.K_w] then
+        player.vel[2] = -1
+        player.anim = 0
+        
     end
     player.walk = player:isMoving()
     player:Vel_Move()

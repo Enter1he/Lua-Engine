@@ -16,19 +16,16 @@ require"iupluagl"; -- adds GlCanvas to iup
 local iup = iup
 
 require"config"
-
+local screen = _en.screen
 local Scenes = require"Scenes.SceneEnum"
 --additional variables
 local key, down = {},0
 local CurrentScene;
+local sceneindex = 1
 -- Utility functions
 
 Graphics = g.Drawing
 
-function StoXY(s) -- converts String char pos to XYCoords(needed for mouse pos convert)
-    local i = s:find("x")
-    return tonumber(s:sub(1,i-1)), tonumber(s:sub(i+1))
-end 
 
 _Close = iup.Close
 _mouse = {0,0}
@@ -98,7 +95,7 @@ function output:map_cb()
     
     iup.GLMakeCurrent(self)
     g.MapMain()
-    CurrentScene = require(Scenes[Scene.TDS])
+    CurrentScene = require(Scenes[sceneindex]..'.root')
     CurrentScene:Load()
     iup.GLSwapBuffers(self)
     
@@ -120,23 +117,27 @@ function output:resize_cb( width, height)
 
     iup.GLMakeCurrent(output)
     g.InitMain(width, height)
-    _en.ah = _en[2].h/height
-    _en.aw = _en[2].w/width
+    _en.ah = screen.h/height
+    _en.aw = screen.w/width
     
 end
 
 
 
 function update:action_cb()
-    iup.LoopStep()
-    CurrentScene:KeyPress(key, down)
-    CurrentScene:Update()
     
+    if CurrentScene.KeyPress ~= EmptyFunc then
+        CurrentScene:KeyPress(key, down)
+    end
+    if CurrentScene.Update ~= EmptyFunc then
+        CurrentScene:Update(_en.dt)
+    end
+    iup.LoopStep()
     iup.Update(output)
     
 end
 
-
+local Command = Controls.Command
 
 local function keypress_cb( k, d)
     if d == 1 then
@@ -147,12 +148,16 @@ local function keypress_cb( k, d)
     
     down = d
     if d == 1 then
-        Controls.Command(k)
+        Command(k)
     end
 end
 
 local function motion_cb(x,y, status)
-    CurrentScene:Motion(x,y)
+    _mouse[1] = x
+    _mouse[2] = y
+    if CurrentScene.Motion ~= EmptyFunc then
+        CurrentScene:Motion(x,y)
+    end
 end
 
 function dialog:destroy_cb()
@@ -162,14 +167,19 @@ end
 
 
 local function Engine()
+    sceneindex = 1 + iup.ListDialog(1,"Scene selection", #Scenes, Scenes, 0,16,5)
+    
     dialog:show()
     
     
     iup.SetGlobalCallback("GLOBALKEYPRESS_CB", keypress_cb)
     iup.SetGlobalCallback("GLOBALMOTION_CB", motion_cb)
+    
+
     update.run = "yes"
     if (iup.MainLoopLevel() == 0) then
         iup.MainLoop()
+        
         iup.Close()
     end
 end

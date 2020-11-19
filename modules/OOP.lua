@@ -4,9 +4,9 @@ undef = require"Undef"
 local metaDef = {
     __tostring = function() return "undef" end; 
     __name = "undef";
-    __call = EmptyFunc;
-    __index = EmptyFunc;
-    __newindex = EmptyFunc;
+    __call = function() error("You can't call undef") end;
+    __index = function() error("undef has no fields") end;
+    __newindex = function() error("undef can't have fields") end;
 }
 
 debug.setmetatable(undef, metaDef)
