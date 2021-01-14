@@ -74,7 +74,7 @@ local dialog = iup.dialog
      -- use the Lua icon from the executable in Windows
     
 };
-local update = iup.timer{time = 16; run = "no"};
+local update = iup.timer{time = 10; run = "no"};
 
 local pausef = 0
 -- FUNCTIONS FOR EXTERNAL WORK
