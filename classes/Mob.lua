@@ -10,7 +10,7 @@ local Mob = {
     sight = 1;
 }
 
-function Mob:Mob_Constructor()
+function Mob:newMob()
 
     self.pos = {0,0}
     self.vel = {0,0}
@@ -23,13 +23,15 @@ function Mob:Mob_Constructor()
 
 end
 
-function Mob:Player_Constructor()
+function Mob:newPlayer()
+
     self.pos = {0,0}
     self.vel = {0,0}
     self.speed = 10
     self.Stop = Mob.Stop
     self.isMob = Mob.isMob
     self.Vel_Move = Mob.Vel_Move
+    
 end
 
 function Mob:Stop()
