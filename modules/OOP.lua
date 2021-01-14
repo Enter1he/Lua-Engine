@@ -1,17 +1,37 @@
-new = require"New" -- used in class creation, so I made it shorter
-undef = require"Undef"
+new = require"New" -- setmetatable used in class creation, so I made it shorter
 
-local metaDef = {
-    __tostring = function() return "undef" end; 
-    __name = "undef";
-    __call = function() error("You can't call undef") end;
-    __index = function() error("undef has no fields") end;
-    __newindex = function() error("undef can't have fields") end;
-}
+local prv = {}
+local beg = {}
+local to = {}
+local function DeepCopy(orig, copy)
+    local i = 0
+    prv[i] = orig
+    to[i] = copy
+    while i >= 0 do
+        for k, v in next, prv[i], beg[i] do
+            
+            if type(v) == 'table' then
+                local c = {}
+                to[i][k] = c
+                beg[i] = k
 
-debug.setmetatable(undef, metaDef)
+                i = i + 1 --Updating depth
 
-local function inherit(child, parent) --table, table
+                prv[i] = v
+                to[i] = c
+
+                goto fin
+            else
+                to[i][k] = v
+            end
+        end
+        i = i - 1
+        ::fin::
+    end
+end
+    
+
+local function ShallowCopy(child, parent) --table, table
     for k,v in pairs(parent) do
         child[k] = v
     end
@@ -53,7 +73,8 @@ end
 
 local OOP = {
     class = class;
-    inherit = inherit;
+    inherit = ShallowCopy;
+    inheritDeep = DeepCopy;
     methods = methods;
     enum = enum;
     Gnum = Gnum;

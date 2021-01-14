@@ -1,7 +1,8 @@
 
 
 local Sprite = {
-    origin = {-0.5,-0.5};
+    size = {1,1};
+    origin = {0.5,0.5};
     anim = 1;
     color = {1,1,1,1};
     frame = 1;
@@ -28,29 +29,42 @@ function Sprite:PlayAnim( start, loop, rate, len)
 
 end
 
-function Sprite:SimpleSprite()
-    self.origin = {-0.5,-0.5}
-    self.color = {1,1,1,1}
-    self.angle = 0
+function Sprite.newSimple(new)
+    new.origin = {0.5,0.5}
+    new.color = {1,1,1,1}
+    new.size = {1,1}
+    new.angle = 0
 
-    self.Load = Graphics.LoadSprite
-    self.Draw = Graphics.DrawSprite
+    new.Load = Graphics.LoadSprite
+    new.Draw = Graphics.DrawSprite
+    new.CopySprite = Sprite.CopySprite
+
+    return new
 end
 
-function Sprite:SpriteSheet()
-    self.origin = {-0.5,-0.5}
-    self.color = {1,1,1,1}
-    self.angle = 0
-    self.anim = 1
-    self.frame = 1
-    self.rate = 0
-    self.af = 0
+function Sprite.newSheet(new)
+    new.origin = {0.5,0.5}
+    new.color = {1,1,1,1}
+    new.size = {1,1}
+    new.angle = 0
+    new.anim = 1
+    new.frame = 0
+    new.rate = 0
+    new.af = 0
     
-    self.Load = Graphics.LoadSpriteSheet
-    self.Draw = Graphics.DrawSpriteSheetAnim
-    self.PlayAnim = Sprite.PlayAnim
+    new.Load = Graphics.LoadSpriteSheet
+    new.Draw = Graphics.DrawSpriteSheet
+    new.PlayAnim = Sprite.PlayAnim
+    new.CopySprite = Sprite.CopySprite
+    
+    return new
 end
 
-
+function Sprite:CopySprite(copy)
+    copy.core = self.core
+    copy.size = self.size
+    copy.origin = self.origin
+    copy.color = self.color
+end
 
 return OOP.class('Sprite', Sprite)

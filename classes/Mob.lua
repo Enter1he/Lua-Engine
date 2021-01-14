@@ -10,28 +10,28 @@ local Mob = {
     sight = 1;
 }
 
-function Mob:newMob()
+function Mob.newMob(new, x, y, speed)
 
-    self.pos = {0,0}
-    self.vel = {0,0}
-    self.over = true
-    self.to = 1
-    self.Stop = Mob.Stop
-    self.isMoving = Mob.isMoving
-    self.Vel_Move = Mob.Vel_Move
-    self.MoveTo = Mob.MoveTo
+    new.pos = {x or 0, y or 0}
+    new.vel = {0,0}
+    new.over = true
+    new.to = 1
+    new.speed = speed or 10
+    new.Stop = Mob.Stop
+    new.isMoving = Mob.isMoving
+    new.Vel_Move = Mob.Vel_Move
+    new.MoveTo = Mob.MoveTo
+    new.RMoveTo = Mob.RMoveTo
 
 end
 
-function Mob:newPlayer()
-
-    self.pos = {0,0}
-    self.vel = {0,0}
-    self.speed = 10
-    self.Stop = Mob.Stop
-    self.isMob = Mob.isMob
-    self.Vel_Move = Mob.Vel_Move
-    
+function Mob.newPlayer(new)
+    new.pos = {0,0}
+    new.vel = {0,0}
+    new.speed = 10
+    new.Stop = Mob.Stop
+    new.isMob = Mob.isMob
+    new.Vel_Move = Mob.Vel_Move
 end
 
 function Mob:Stop()
@@ -79,7 +79,7 @@ function Mob:MoveTo( x, y)
         self.pos[1] = c1 and x or self.pos[1]
         self.pos[2] = c2 and y or self.pos[2]
         self.over = c1 and c2
-
+        
         
         return true
     elseif self.over == true then
@@ -98,7 +98,7 @@ function Mob:RMoveTo(from, to)
             self.ry = math.random(to[1], to[2])
         end
         local x, y = self.rx, self.ry
-        local sdt = self.speed * dt
+        
         
         self.vel[1], self.vel[2] = 0, 0
 
@@ -117,13 +117,15 @@ function Mob:RMoveTo(from, to)
         local c2 = (self.vel[2] <= 0 and oy <= y) or (self.vel[2] >= 0 and oy >= y)
         
         
+
         self.pos[1] = c1 and x or self.pos[1]
         self.pos[2] = c2 and y or self.pos[2]
         self.over = c1 and c2
         if self.over then
-            self.rx = nil
-            self.ry = nil
+            self.rx = false
+            self.ry = false
         end
+        
         return true
     elseif self.over == true then
         self.rx = math.random(from[1], from[2])
@@ -203,7 +205,7 @@ function Mob:Path(args)
 end
 
 
-OOP.inherit(Mob, Sprite)
+OOP.inheritDeep(Mob, Sprite)
 
 
 

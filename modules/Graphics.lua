@@ -53,90 +53,9 @@ local Drawings = {
 
 -----------------------------------------------------------------TEXT--------------------------------------------------
 
-function Drawings.LoadText(text, font)
-    text.font = font or text.font
-    text.face = ft2.LoadFont(text.font, text.size)
-    text.tex = gl.GenTextures(128)
-    
-    for i = 0, 127 do
-        gl.BindTexture('TEXTURE_2D', text.tex[i+1])
-        gl.TexParameter('TEXTURE_2D','TEXTURE_MAG_FILTER','LINEAR')
-        gl.TexParameter('TEXTURE_2D','TEXTURE_MIN_FILTER','LINEAR')
-        gl.TexEnv( 'TEXTURE_ENV',  'TEXTURE_ENV_MODE', 'DECALS')
-
-        gl.TexImage2D(0, gl.RGBA, text.face[i][3], text.face[i][4], 0, gl.LUMINANCE_ALPHA, gl.UNSIGNED_BYTE, text.face[i][0])
-        
-    end
-
-    ft2.DestroyFace(text.face)
-end
-
-local function Letter(text, n, pn, pos)
-    local px,py = text.px, text.py
-    local face = text.face
-    local kernx;
-    if pn then
-        local width = text.face[pn][1]
-        kernx = (width == 0) and text.size or width
-    else
-        kernx = 0
-    end
-    
-    
-    local x, y = px + kernx , text.pos[2]
-    local w, h, w2, h2 = text.face[n][1], text.face[n][2], text.face[n][3], text.face[n][4]
-    local dx, dy = w/w2, h/h2
-    local top = face[n][5]
-    
-    
-    text.px, text.py = x, text.pos[2] + top 
-    y = text.py + (pn==10 and text.size or 0)
-    gl.PushMatrix()
-        gl.Color(text.color[1], text.color[2], text.color[3])
-        gl.Translate(x,y,0) 
-    
-        gl.Enable('TEXTURE_2D')
-
-        gl.Enable('BLEND')
-        
-        gl.BlendFunc('SRC_COLOR', 'ONE_MINUS_SRC_COLOR')
-        gl.BindTexture(gl.TEXTURE_2D, text.tex[n+1])
-        gl.Begin(gl.QUADS)
-            gl.TexCoord(0, dy); gl.Vertex(0, -h)
-            gl.TexCoord(dx, dy); gl.Vertex(w, -h)
-            gl.TexCoord(dx, 0); gl.Vertex(w, 0)
-            gl.TexCoord(0, 0); gl.Vertex(0, 0)
-        gl.End()
-
-        gl.Disable('BLEND')
-
-        gl.Disable('TEXTURE_2D') 
-        
-    
-    gl.PopMatrix()
-end
 
 
-
-function Drawings.DrawText(text)
-    local value, pos = text.value, text.pos
-    text.px, text.py = pos[1],pos[2]
-    value:gsub("().",
-    function(s)
-        
-        local char, pchar = value:byte(s), (s>0) and value:byte(s-1)
-        
-        if char then
-            
-            Letter(text, char, pchar, s)
-        end
-        return value:sub(s,s)
-    end
-    )
-    
-end
-
-function Drawings.LoadTextListed(text)
+function Drawings.LoadText(text)
     text.font = font or text.font
     text.face = ft2.LoadFont(text.font, text.size)
     text.list = gl.GenLists(128)
@@ -175,7 +94,7 @@ function Drawings.LoadTextListed(text)
     ft2.DestroyFace(text.face)
 end
 
-function Drawings.DrawTextListed(text)
+function Drawings.DrawText(text)
     gl.PushMatrix()
     
     gl.Color(text.color[1], text.color[2], text.color[3])
@@ -248,10 +167,11 @@ end
 
 function Drawings.LoadSpriteSheet(sprite, fold, blend)
     if fold then
+        local src;
         if package.loaded[fold] then   
-            sprite.src = package.loaded[fold]
+            src = package.loaded[fold]
         else 
-            sprite.src = require(fold)
+            src = require(fold)
         end
         blend = blend or 'none'
         -- Typical Texture Generation Using Data From file
@@ -271,9 +191,9 @@ function Drawings.LoadSpriteSheet(sprite, fold, blend)
 
         local gldata, glformat = pic:GetOpenGLData()
         gl.TexImage2D(0, 4, pic:Width(), pic:Height(), 0, glformat, gl.UNSIGNED_BYTE, gldata)
-        local anim = sprite.src.anim
-        sprite.w = sprite.src.w
-        sprite.h = sprite.src.h
+        local anim = src.anim
+        sprite.w = src.w
+        sprite.h = src.h
 
         local SRC, ONE = (blend == 'alpha') and 'SRC_ALPHA' or 'SRC_COLOR', (blend == 'alpha') and 'ONE_MINUS_SRC_ALPHA' or 'ONE_MINUS_SRC_COLOR'
         for i = 1, #anim do
