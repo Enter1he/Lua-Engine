@@ -8,4 +8,6 @@ Building advice
 
 Use .bat files and don't forget to install gcc
 
+Windows only.
+
 Good luck!
