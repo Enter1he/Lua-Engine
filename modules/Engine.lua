@@ -17,6 +17,7 @@ _en ={
     name = "_en";
 }
 
+
 Graphics = require"Graphics"
 
 Fonts = "C:/Windows/Fonts/" -- Windows font factory
@@ -32,6 +33,13 @@ local key, down = {},0
 
 _mouse = {0,0}
 
+local Destructor = {
+    __gc = 
+    function(self)
+        self:Delete()
+    end
+}
+
 function NewScene(scene)
     
     scene.Load = EmptyFunc;
@@ -41,16 +49,22 @@ function NewScene(scene)
     scene.KeyPress = EmptyFunc;
     scene.KeyRelease = EmptyFunc;
     scene.Motion = EmptyFunc;
+    scene.Button = EmptyFunc;
+
+    setmetatable(scene, Destructor)
     
     return scene
 
 end
 
 
-
+Layer = require"classes.Layer"
 Text = require"classes.Text"
 Sprite = require"classes.Sprite"
 Item = require"classes.Item"
 Mob = require"classes.Mob"
+Vector = require"classes.Vector"
+Color = require"classes.Color"
+
 
 

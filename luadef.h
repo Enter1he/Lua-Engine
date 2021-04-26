@@ -11,6 +11,11 @@
   }\
 }
 
+
+#define lua_getvalue(L, idx, name) if(!lua_getfield(L, idx, name)) printf("%s line %d: no %s defined in table\n", __FILE__ , __LINE__, name)
+
+#define lua_getidx(L, idx, n) if(!lua_geti(L, idx, n)) printf("%s line %d: no %d defined in table\n", __FILE__ , __LINE__, n)
+
 #define lua_nameAtable(L, idx, name){\
 	lua_pushstring(L, name);\
 	lua_setfield(L, (idx) ? idx : idx-1, "name");\
@@ -45,6 +50,9 @@
 #define lua_L lua_State *L
 
 #define lua_cleanargs(L, num) {int top = lua_gettop(L); if (top > num) lua_pop(L, top-num);}
+
+#define Error_print(str,...) printf(str,##__VA_ARGS__); printf("\n"); getchar();
+
 
 
 #define stackDump(L) {\

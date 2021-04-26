@@ -1,4 +1,4 @@
-new = require"New" -- setmetatable used in class creation, so I made it shorter
+new = setmetatable -- setmetatable used in class creation, so I made it shorter
 
 local prv = {}
 local beg = {}
@@ -53,6 +53,16 @@ local function class(name, o) --table
     o.__name = name or '<unnamed>'
     return o
 end
+local Callable = { 
+    __call = 
+    function(self,t)
+        return setmetatable(t or {0,0}, self)
+    end
+}
+local function constructor(name, o)
+    o.__name = name or '<unnamed>'
+    return setmetatable(o, Callable)
+end
 
 local function enum(...) --basically needs strigs only
     local arg = {...}
@@ -73,6 +83,7 @@ end
 
 local OOP = {
     class = class;
+    makeCallable = constructor;
     inherit = ShallowCopy;
     inheritDeep = DeepCopy;
     methods = methods;

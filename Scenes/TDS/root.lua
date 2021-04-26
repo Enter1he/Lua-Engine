@@ -6,20 +6,15 @@ local sW, sH, aH = _en.screen.w, _en.screen.h
 
 
 local player = { 
-    pos = {60,50};
+    pos = {100,50};
     origin = {0.5, -0.5};
-    angle = 0;
+    size = {50,60};
     
-    frame = 1;
-    rate = 0;
-    af = 0;
     speed = 100;
     walk = false;
-    Draw = Graphics.DrawSpriteSheet;
-    Load = Graphics.LoadSpriteSheet;
-    Vel_Move = Mob.Vel_Move;
-    Stop = Mob.Stop;
 };
+Mob.newPlayer(player)
+Sprite.newSheet(player)
 
 local text = new(
 {
@@ -31,72 +26,45 @@ local text = new(
 }, Text)
 
 
-local flower = new({
-    pos = {60, 50};
-    Draw = Graphics.DrawSprite;
-    Load = Graphics.LoadSprite;
-}, Item);
 
 Controls.AddCommand(65307, os.exit)
 
 
 
 local step;
-local function walk()
-    local r =  player.rate
-    local c = 3
-    if player.walk then
-        if r < c then
-            player.rate = player.rate + 1
-        elseif r == c then
-            player.rate = 0
-            if player.af < 3 then
-                player.af = player.af + 1
-            else 
-                player.af = 0
-            end
-            player.frame = player.anim + player.af
-        end
-    else
-        player.af = 0
-        player.frame = player.anim
-    end
-    
-end
+
 
 local TDS = NewScene{
     
 }
 
 function TDS:Load()
-    print("text.value")
-    new(player, Mob)
+    
+    
     
     text:Load()
-    flower:Load("Scenes/TDS/res/Flower/Flower.png")
-    player:Load("Scenes/TDS/res/player/TopDownMen", -1)
-    step = player.src.anim
-    player.size[1]= player.size[1] * 2
-    player.size[2] = player.size[2] * 2
-    text.value = "Hello World"
+    --flower:Load("Scenes/TDS/res/Flower/Flower.png")
+    player:Load("Scenes/TDS/res/player/TopDownMen",0)
+   
     
 end
 
 function TDS:Update()
     
     player:Stop()
-    -- if player.frame < 11 then
-    --     player.frame = player.frame + 1
-    -- end
-    walk()
+    
+    if player.walk then
+        player:PlayAnim(player.anim, true, 10, 4)
+    
+    end
+    
     player.walk = false
 end
 
-function TDS:Draw(gl)
-    
+function TDS:Draw()
     player:Draw()
-    text:Draw()
-    flower:Draw()
+    -- text:Draw()
+    
     
 end
 
@@ -104,27 +72,34 @@ function TDS:KeyPress(key, down)
     
     player:Stop()
     
-    if key[83] or key[115] then
+    if key[B.S] or key[B.s] then
         player.vel[2] = 1
-        player.anim = 15
+        player.anim = 1
     end
-    if key[65] or key[97] then
+    if key[B.A] or key[B.a] then
         player.vel[1] = -1
-        player.anim = 5
+        player.anim = 3
     end
-    if key[68] or key[100] then
+    if key[B.D] or key[B.d] then
         player.vel[1] = 1
-        player.anim = 10
+        player.anim = 2
     end
-    if key[87] or key[119] then
+    if key[B.W] or key[B.w] then
         player.vel[2] = -1
-        player.anim = 0
+        player.anim = 4
         
     end
+    
     player.walk = player:isMoving()
+    if not player.walk then 
+        player.frame = 0
+    end
     player:Vel_Move()
     
+end
 
+function TDS:KeyRelease(key)
+    
 end
 
 function TDS:Motion(x,y)

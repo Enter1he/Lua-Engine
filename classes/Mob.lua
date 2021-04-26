@@ -11,7 +11,7 @@ local Mob = {
 }
 
 function Mob.newMob(new, x, y, speed)
-
+    new = new or {}
     new.pos = {x or 0, y or 0}
     new.vel = {0,0}
     new.over = true
@@ -26,11 +26,13 @@ function Mob.newMob(new, x, y, speed)
 end
 
 function Mob.newPlayer(new)
-    new.pos = {0,0}
-    new.vel = {0,0}
-    new.speed = 10
+    new = new or {}
+    new.pos = new.pos or {0,0}
+    new.vel = new.vel or {0,0}
+    new.speed = new.speed or 10
     new.Stop = Mob.Stop
     new.isMob = Mob.isMob
+    new.isMoving = Mob.isMoving
     new.Vel_Move = Mob.Vel_Move
 end
 
