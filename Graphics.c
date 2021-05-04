@@ -209,15 +209,12 @@ int LE_DrawText(lua_L)
             texcoords[6] = 0,         texcoords[7] = 0; 
             glTranslated(px, py, 0);
             glPushMatrix();
-                glEnable(GL_TEXTURE_2D);
-                glEnable(GL_BLEND);
+                
                 glEnableClientState(GL_COLOR_ARRAY);
                 glEnableClientState(GL_VERTEX_ARRAY);
                 glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
                 glTranslated(0, -sc[ch].top,0);
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-                
 
                 glBindTexture(GL_TEXTURE_2D, sc[ch].tex);
                 glColorPointer(4, GL_DOUBLE, 0, colors);
@@ -229,18 +226,10 @@ int LE_DrawText(lua_L)
                 
 
                 glDrawArrays(GL_QUADS, 0, 4);
-                // glBegin(GL_QUADS);
-                //     glTexCoord2d(0, sc[ch].dy);         glVertex2d(0, sc[ch].h);
-                //     glTexCoord2d(sc[ch].dx, sc[ch].dy); glVertex2d(sc[ch].w, sc[ch].h);
-                //     glTexCoord2d(sc[ch].dx, 0);         glVertex2d(sc[ch].w, 0);
-                //     glTexCoord2d(0, 0);                 glVertex2d(0, 0);
-                // glEnd();
                 
                 glDisableClientState(GL_VERTEX_ARRAY);
                 glDisableClientState(GL_TEXTURE_COORD_ARRAY);
                 glDisableClientState(GL_COLOR_ARRAY);
-                glDisable(GL_BLEND);
-                glDisable(GL_TEXTURE_2D);
                 glBindTexture(GL_TEXTURE_2D, 0);
             glPopMatrix();
             
@@ -336,9 +325,9 @@ int LE_DrawSprite(lua_L){
     glPushMatrix();
         
         
-        glTranslated(x,y,0);
+        glTranslated(x+xoff,y-yoff,0);
         glRotated(lua_tonumber(L,-1), 0, 0, 1);
-        glTranslated(xoff, -yoff,0);
+        
         glScaled(w,h,0);
         
         
@@ -346,25 +335,21 @@ int LE_DrawSprite(lua_L){
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
         
-        glEnable(GL_TEXTURE_2D);
-        glEnable(GL_BLEND);
+        
+        
         
 
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            
             glBindTexture(GL_TEXTURE_2D, *core);
 
             glBindBuffer(GL_ARRAY_BUFFER, qVBO);
             glTexCoordPointer(2, GL_DOUBLE, 0, (void*)sizeof(gtexcoord));
             glVertexPointer(2, GL_DOUBLE, 0, NULL);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
-            // glTexCoordPointer(2, GL_DOUBLE, 0, gtexcoord);
-            // glVertexPointer(2, GL_DOUBLE, 0, gverts);
             glColorPointer(4,GL_DOUBLE,0,colors);
             glDrawArrays(GL_QUADS, 0, 4);
             
-        glBindTexture(GL_TEXTURE_2D, 0);
-        glDisable(GL_BLEND);
-        glDisable(GL_TEXTURE_2D);   
+        glBindTexture(GL_TEXTURE_2D, 0);  
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_TEXTURE_COORD_ARRAY);
         glDisableClientState(GL_COLOR_ARRAY);
@@ -521,8 +506,7 @@ int LE_DrawSpriteSheet(lua_L)
     texcoords[6] = texcoords[0];             texcoords[7] = texcoords[5]; 
 
     glPushMatrix();
-        glEnable(GL_TEXTURE_2D);
-        glEnable(GL_BLEND);
+        
         glEnableClientState(GL_COLOR_ARRAY);
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -533,7 +517,7 @@ int LE_DrawSpriteSheet(lua_L)
         
 
         glBindTexture(GL_TEXTURE_2D, sc->tex);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        
         
         glScaled(w, h, 0);
         // Error_print("%g %d", texcoords[2], frame);
@@ -550,8 +534,7 @@ int LE_DrawSpriteSheet(lua_L)
         
         
         
-        glDisable(GL_BLEND);
-        glDisable(GL_TEXTURE_2D);
+        
         glBindTexture(GL_TEXTURE_2D, 0);
         glDisableClientState(GL_COLOR_ARRAY);
         glDisableClientState(GL_VERTEX_ARRAY);
@@ -578,8 +561,11 @@ int LE_DrawLayer(lua_L){
     lua_getidx(L, -2, 2);
 
     glScaled(lua_tonumber(L, -2), lua_tonumber(L, -1), 0);
+    lua_getvalue(L, 1, "blend");
+    int check = lua_tointeger(L, -1);
+    int src = (check) ? GL_SRC_COLOR : GL_SRC_ALPHA, one = (check) ? GL_ONE_MINUS_SRC_COLOR : GL_ONE_MINUS_SRC_ALPHA;
 
-    lua_pop(L, 6);
+    lua_pop(L, 7);
 
     lua_len(L,2);
     
@@ -590,13 +576,27 @@ int LE_DrawLayer(lua_L){
             lua_pop(L,2);
             continue;
         }
+        glEnable(GL_TEXTURE_2D);
+        glEnable(GL_BLEND);
+        glBlendFunc(src, one);
         lua_rotate(L, lua_gettop(L)-1, 1);
         lua_pcall(L, 1, 0, 0);
-        
-        
+        glDisable(GL_BLEND);
+        glDisable(GL_TEXTURE_2D);
     }
     
     glPopMatrix();
+    return 0;
+}
+
+int LE_DrawScene(lua_L){
+    
+    
+
+    lua_getvalue(L, 1, "Draw");
+    lua_pushvalue(L, 1);
+    lua_pcall(L,1,0,0);
+    
     return 0;
 }
 
@@ -629,30 +629,115 @@ inline double apsin(double angle){
     return apcos(halfpi-angle);
 }
 
-
-int LE_DrawPolygon(lua_L){
+double *point = 0; size_t psize= 0;
+int LE_DrawCircle(lua_L){
     int top = lua_gettop(L);
     if (top==4){
-        double range = lua_tonumber(L, -2);
-        int step = lua_tointeger(L,-1);
-        step = (step > 2) ? step : 3;
-        double px = lua_tonumber(L, -4), py = lua_tonumber(L, -3); 
-        double angle = 360.0/step;
+        top = -top;
+        double px = lua_tonumber(L, ++top), py = lua_tonumber(L, ++top);
+        double radius = lua_tonumber(L, ++top);
+        int step = 1 - 2*radius;
+        
+        lua_getglobal(L, "Graphics");
+        lua_getvalue(L, -1, "color");
+        lua_getidx(L,-1, 1);
+        lua_getidx(L,-2, 2);
+        lua_getidx(L,-3, 3);
+        lua_getidx(L,-4, 4);
+        glColor4d(lua_tonumber(L, -4), lua_tonumber(L, -3), lua_tonumber(L, -2), lua_tonumber(L, -1));
 
-        glBegin(GL_POLYGON);
+        
+         
+        double angle = twopi/step;
+        GLenum mode = (lua_toboolean(L,1))? GL_POLYGON : GL_LINE_LOOP;
+        if (!point){
+            psize = sizeof(double)*2*step;
+            point = malloc(psize);
+        } else {
+            if (psize < sizeof(double)*2*step) {
+                psize = sizeof(double)*2*step;
+                realloc(point, psize);
+            }
+        }  
+        int j = 0;
         for (int i = step; i > 0; i--){
-            double x = range*apcos(i*angle), y = range*apsin(i*angle);
-            glVertex2d(px+x, py+y);
+            double x = radius*apcos(i*angle), y = radius*apsin(i*angle);
+            point[j] = px+x; point[++j] = py+y;  
+            j++;
         }
-        glEnd();
+        
+        
+        
+        
+        glEnableClientState(GL_VERTEX_ARRAY);
+
+        
+        
+        glVertexPointer(2, GL_DOUBLE, 0, point);
+        glDrawArrays(mode, 0, step);
+
+        
+        glDisableClientState(GL_VERTEX_ARRAY);
+        
+        
     } else
         return 1;
+    return 0;
+}
+
+int LE_DrawRect(lua_L){
+    int top = lua_gettop(L);
+    if (top >= 4){
+        GLenum mode = (lua_toboolean(L,1))? GL_QUADS: GL_LINE_LOOP;
+        top = -top;
+        double x = lua_tonumber(L,++top),
+               y = lua_tonumber(L,++top),
+               x2 = lua_tonumber(L,++top),
+               y2 = lua_tonumber(L,++top);
+        lua_getglobal(L, "Graphics");
+        lua_getvalue(L, -1, "color");
+        lua_getidx(L,-1, 1);
+        lua_getidx(L,-2, 2);
+        lua_getidx(L,-3, 3);
+        lua_getidx(L,-4, 4);
+        
+        colors[12] = colors[8] = colors[4] = colors[0] = lua_tonumber(L, -4),
+        colors[13] = colors[9] = colors[5] = colors[1] = lua_tonumber(L, -3),
+        colors[14] = colors[10] = colors[6] = colors[2] = lua_tonumber(L, -2),
+        colors[15] = colors[11] = colors[7] = colors[3] = lua_tonumber(L, -1);
+        if (!point) {
+            psize = sizeof(double)*8;
+            point = malloc(psize);
+        }
+        if (psize < sizeof(double)*8){
+            psize = sizeof(double)*8;
+            point = realloc(point, psize);
+        }
+        point[0] = x; point[1] = y;
+        point[2] = x2; point[3] = y;
+        point[4] = x2; point[5] = y2;
+        point[6] = x; point[7] = y2;
+        
+        
+        glEnableClientState(GL_COLOR_ARRAY);
+        glEnableClientState(GL_VERTEX_ARRAY);
+
+        
+        glColorPointer(4, GL_DOUBLE, 0, colors);
+        glVertexPointer(2, GL_DOUBLE, 0, point);
+        glDrawArrays(mode, 0, 4);
+
+        glDisableClientState(GL_COLOR_ARRAY);
+        glDisableClientState(GL_VERTEX_ARRAY);
+        
+    }
     return 0;
 }
 
 int ModuleGC(lua_L){
     glDeleteBuffers(1, &qVBO);
     glDeleteBuffers(1, &vxVBO);
+    if (point) free(point);
     return 0;
 }
 
@@ -679,9 +764,11 @@ static const struct luaL_Reg func[] = {
     
 
     {"DrawLayer", &LE_DrawLayer},
+    {"DrawScene", &LE_DrawScene},
 
 
-    {"DrawPolygon", &LE_DrawPolygon},
+    {"DrawCircle", &LE_DrawCircle},
+    {"DrawRect", &LE_DrawRect},
 
 
     {NULL, NULL}
@@ -720,7 +807,16 @@ int LUA_DLL luaopen_Graphics(lua_L)
     luaL_newlib(L, func);
     luaL_newlib(L, meta);
     lua_setmetatable(L, -2);
-    
+    lua_createtable(L, 4, 4);
+    lua_pushinteger(L, 1);
+    lua_seti(L, -2, 1);
+    lua_pushinteger(L, 1);
+    lua_seti(L, -2, 2);
+    lua_pushinteger(L, 1);
+    lua_seti(L, -2, 3);
+    lua_pushinteger(L, 1);
+    lua_seti(L, -2, 4);
+    lua_setfield(L, -2, "color");
     
     return 1;
 }

@@ -10,7 +10,8 @@ local Sprite = {
     angle = 0;
 }
 
-local af = {}
+local af = Lalloc(1)
+
 
 function Sprite:PlayAnim( anim, loop, rate, len)
     local r = self.rate
@@ -32,14 +33,16 @@ end
 
 function Sprite.newSimple(new)
     new = new or {}
-    new.origin = new.origin or {0.5,0.5}
-    new.color = new.color or {1,1,1,1}
-    new.size = new.size or {1,1}
-    new.angle = new.angle or 0
+    local _ENV = new
+    pos = pos or {0,0,0}
+    origin = origin or {0.5,0.5}
+    color = color or {1,1,1,1}
+    size = size or {1,1}
+    angle = angle or 0
 
-    new.Load = Graphics.LoadSprite
-    new.Draw = Graphics.DrawSprite
-    new.CopySprite = Sprite.CopySprite
+    Load = Load or Graphics.LoadSprite
+    Draw = Draw or Graphics.DrawSprite
+    CopySprite = Sprite.CopySprite
 
     return new
 end
@@ -47,6 +50,7 @@ end
 function Sprite.newSheet(new)
     new = new or {}
     local _ENV = new
+    pos = pos or {0,0,0}
     origin = origin or {0.5,0.5}
     color = color or {1,1,1,1}
     size = size or {1,1}
@@ -56,8 +60,8 @@ function Sprite.newSheet(new)
     rate = rate or 1
     new[af] = new[af] or 1
     
-    Load = Graphics.LoadSpriteSheet
-    Draw = Graphics.DrawSpriteSheet
+    Load = Load or Graphics.LoadSpriteSheet
+    Draw = Draw or Graphics.DrawSpriteSheet
     PlayAnim = Sprite.PlayAnim
     CopySprite = Sprite.CopySprite
     GetSize = Graphics.GetSize
@@ -66,12 +70,13 @@ function Sprite.newSheet(new)
 end
 
 function Sprite:CopySprite(copy)
-    
     copy.core = self.core
     copy.size = self.size
     copy.origin = self.origin
     copy.color = self.color
     copy.src = self.src
+    copy.Draw = self.Draw
+    copy.Load = self.Load
 end
 
 return OOP.class('Sprite', Sprite)

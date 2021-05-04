@@ -9,6 +9,7 @@ local Text = {
     pos = {0,0};
     color = {1,1,1,1};
     Load = Graphics.LoadText;
+    Draw = Graphics.DrawText;
 }
 
 function Text.newText(value, size, font)

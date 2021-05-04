@@ -1,49 +1,74 @@
 local screen = _en.screen
 
-local order, list = {}, {}
+local order, list = Lalloc(1), Lalloc(1)
 
 
 local Layer = {
     [list] = {};
     pos = {0,0};
     size = {1,1};
-    Draw = Graphics.DrawLayer;
+    
 }
 
-
-
+local LDraw = Graphics.DrawLayer
 local half = 0.5
+
 
 function Layer:CenterAt(x, y)
     local _ENV = self
     pos[1], pos[2] = x - screen.w*half, y - screen.h*half
 end
 
+function Layer:ReloadList()
+    self[list] = {}
+end
+
 
 function Layer:AddDrawable(drawable) 
-    local list = self[list]
-    local i = #list + 1
-    list[i] = drawable
+    local l = self[list]
+    local i = #l + 1
+    l[i] = drawable
     drawable[order] = i
 end
 
 
-function Layer:RemoveDrawable(i)
-    local list = self[list]
-    local n = #list
-    list[n], list[i] = list[i], list[n]
-    list[i][order] = i
-    list[n] = nil
+function Layer:RemoveDrawable(drawable)
+    local i = drawable[order]
+    local l = self[list]
+    local n = #l
+
+    l[n], l[i] = l[i], l[n]
+    if not l[i] then
+        for k,v in pairs(l) do
+            print{k,v}
+        end
+        print(i, l[i].__name, drawable)
+    end
+    l[i][order] = i
+    l[n] = nil
+end
+
+
+function Layer:Draw()
+    LDraw(self, self[list])
 end
 
 
 function Layer.new(new)
-    local _ENV = new or {}
+    new = new or {}
+    local _ENV = new
+
+
     pos = pos or {0,0}
     size = size or {1,1}
-    _ENV[list] = _ENV[list] or {}
+    blend = blend or 0
+    new[list] = new[list] or {}
     Draw = Layer.Draw
     CenterAt = Layer.CenterAt
+    AddDrawable = Layer.AddDrawable
+    RemoveDrawable = Layer.RemoveDrawable
+    ReloadList = Layer.ReloadList
+
     return _ENV
 end
 

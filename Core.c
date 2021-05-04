@@ -118,21 +118,7 @@ TCallback loading_Scene(T_args)
   return 0;
 }
 
-int ChangeScene(lua_L){
-  
-  sceneindex = lua_tointeger(l, 1);
 
-  loadScene = NEW_LOAD;
-
-  
-
-  return 0;
-}
-
-int ResumeLoading(lua_L){
-  pthread_cond_signal(&Loading.on); // calling loading thread
-  return 0;
-}
 
 
 
@@ -269,17 +255,6 @@ int Button_cb(Ihandle* ih, int button, int pressed, int x, int y, char* status)
   return IUP_DEFAULT;
 }
 
-
-int Pause(lua_L)
-{
-  
-  char * check = IupGetAttribute(upd, "RUN");
-  IupSetAttribute(upd, "RUN", (check[0]=='Y')? "NO" : "YES");
-  return 0;
-}
-
-
-
 int update_cb(Ihandle * self)
 {
   switch(loadScene){ 
@@ -384,7 +359,7 @@ int redraw(Ihandle *self, float x, float y)
     lua_setglobal(l, "ft");
     ptime2 = ctime2;
   }
-
+  
   lua_cleanargs(l, numArgs);
   IupGLSwapBuffers(cnv); 
   
@@ -395,10 +370,18 @@ int redraw(Ihandle *self, float x, float y)
 
 int close_cb(Ihandle *self){
   DestroyPthread(Loading);
+  IupExitLoop();
+  IupClose();
   return IUP_DEFAULT;
 }
 
-
+int ReturnFocus(lua_L)
+{
+  
+  IupSetFocus(dg);
+  IupSetFocus(cnv);
+  return 0;
+}
 
 int EngineBoot(int *argc, char ***argv)
 {
@@ -420,11 +403,11 @@ int EngineBoot(int *argc, char ***argv)
   
   IupSetAttribute(cnv, IUP_BUFFER, IUP_DOUBLE);
   IupSetAttribute(cnv, "RASTERSIZE", "640x480");
-  
-  
   IupSetCallback(cnv, "KEYPRESS_CB", (Icallback) Key_press);
   IupSetCallback(cnv, "BUTTON_CB", (Icallback) Button_cb);
   IupSetCallback(cnv, "MOTION_CB", (Icallback) Motion_cb);
+  
+  
   IupSetCallback(cnv, "ACTION", (Icallback) redraw);
   IupSetCallback(cnv, "MAP_CB", (Icallback) map);
   IupSetCallback(cnv, "RESIZE_CB", (Icallback) resize);
@@ -441,6 +424,7 @@ int EngineBoot(int *argc, char ***argv)
   IupSetAttribute(dg, "TITLE", "LuaEngine");
   IupSetAttribute(dg, "SIZE", "640x320");
   IupSetCallback(dg, "DESTROY_CB", (Icallback) close_cb);
+  
   
   lua_pushnumber(l, fps);
   lua_setglobal(l, "fps");
@@ -466,7 +450,11 @@ int EngineBoot(int *argc, char ***argv)
 }
 
 
-
+int Lalloc(lua_L)
+{
+  lua_newuserdata(L, luaL_checkinteger(L, 1));
+  return 1;
+}
 
 
 int Close(lua_L)
@@ -476,21 +464,38 @@ int Close(lua_L)
   return 0;
 }
 
+int ChangeScene(lua_L){
+  
+  sceneindex = luaL_checkinteger(L, 1);
+
+  loadScene = NEW_LOAD;
+
+  
+
+  return 0;
+}
+
+int ResumeLoading(lua_L){
+  pthread_cond_signal(&Loading.on); // calling loading thread
+  return 0;
+}
+
 int main(int argc, char **argv)
 {
   
   l = luaL_newstate();
   luaL_openlibs(l);
 
-  
-  lua_register(l, "Pause", Pause);
+  lua_register(l, "Lalloc", Lalloc);
   lua_register(l, "Close", Close);
   lua_register(l, "ChangeScene", ChangeScene);
   lua_register(l, "ResumeLoading", ResumeLoading);
+  lua_register(l, "ReturnFocus", ReturnFocus);
+  
 
   lua_require(l, "config");
   lua_getglobal(l, "startscene");
-  sceneindex = lua_tointeger(l, -1);
+  sceneindex = luaL_checkinteger(l, -1);
   lua_pop(l,2);
   
   

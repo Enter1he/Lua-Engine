@@ -3,7 +3,8 @@ new = setmetatable -- setmetatable used in class creation, so I made it shorter
 local prv = {}
 local beg = {}
 local to = {}
-local function DeepCopy(orig, copy)
+
+local function DeepCopy(orig, copy)--(table, table)
     local i = 0
     prv[i] = orig
     to[i] = copy

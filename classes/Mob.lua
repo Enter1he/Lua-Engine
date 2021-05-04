@@ -22,6 +22,7 @@ function Mob.newMob(new, x, y, speed)
     new.Vel_Move = Mob.Vel_Move
     new.MoveTo = Mob.MoveTo
     new.RMoveTo = Mob.RMoveTo
+    new.RVel_Move = Mob.RVel_Move
 
 end
 
@@ -51,6 +52,27 @@ end
 function Mob:Tile_Move()
     local s = self.speed
     
+end
+
+function Mob:RVel_Move(amp1, amp2, from, to)
+    amp1 = amp1 or 1
+    amp2 = amp2 or 1
+    from = from or {0,10}
+    to = to or {0,10}
+    local sdt = self.speed * dt
+    local pos, vel = self.pos, self.vel
+    vel[1] = math.random(-amp1, amp2)
+    vel[2] = math.random(-amp1, amp2)
+    
+    if pos[1] + vel[1] < from[1] and pos[1] + vel[1] > to[1] then
+        vel[1] = -vel[1] 
+    end
+    if pos[2] + vel[2] < from[2] and pos[2] + vel[2] > to[2] then
+        vel[2] = -vel[2] 
+    end      
+
+    pos[1] = pos[1] + vel[1] * sdt
+    pos[2] = pos[2] + vel[2] * sdt
 end
 
 function Mob:Vel_Move()

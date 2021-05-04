@@ -28,6 +28,7 @@ local screen = _en.screen
 local key, down = {},0
 
 
+
 -- Utility functions
 
 
@@ -39,18 +40,21 @@ local Destructor = {
         self:Delete()
     end
 }
-
+local EmptyFunc = EmptyFunc
+local DrawScene = Graphics.DrawScene
+local setmetatable = setmetatable
 function NewScene(scene)
-    
-    scene.Load = EmptyFunc;
-    scene.Draw = EmptyFunc;
-    scene.Update = EmptyFunc;
-    scene.Delete = EmptyFunc;
-    scene.KeyPress = EmptyFunc;
-    scene.KeyRelease = EmptyFunc;
-    scene.Motion = EmptyFunc;
-    scene.Button = EmptyFunc;
-
+    scene = scene or {}
+    local _ENV = scene
+    Load = EmptyFunc;
+    Draw = EmptyFunc;
+    Update = EmptyFunc;
+    Delete = EmptyFunc;
+    KeyPress = EmptyFunc;
+    KeyRelease = EmptyFunc;
+    Motion = EmptyFunc;
+    Button = EmptyFunc;
+    Render = DrawScene;
     setmetatable(scene, Destructor)
     
     return scene
