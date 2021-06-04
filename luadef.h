@@ -11,6 +11,8 @@
   }\
 }
 
+#define lua_Table static const struct luaL_Reg  // making big thing small
+#define lua_eoT {NULL, NULL} 				 	//
 
 #define lua_getvalue(L, idx, name) if(!lua_getfield(L, idx, name)) printf("%s line %d: no %s defined in table\n", __FILE__ , __LINE__, name)
 
@@ -55,42 +57,42 @@
 
 
 
-#define stackDump(L) {\
-	int i;\
-	int top = lua_gettop(L);\
-	for(i = 1; i <= top; i++) {\
-		int t = lua_type(L, i);\
-		printf("%d:", -(top-i)-1);\
-		switch(t) {\
-			case LUA_TNIL:\
-				printf("nil");\
-				break;\
-			case LUA_TBOOLEAN:\
-				printf(lua_toboolean(L, i) ? "true" : "false");\
-				break;\
-			case LUA_TNUMBER:\
-				printf("%g", lua_tonumber(L, i));\
-				break;\
-			case LUA_TSTRING:\
-				printf("%s", lua_tostring(L, i));\
-				break;\
-			case LUA_TFUNCTION:\
-				printf("%s", lua_typename(L, t));\
-				break;\
-			case LUA_TTABLE: {\
-				lua_getfield(L, i, "name");\
-				const char* q = lua_tolstring(L, top+1, NULL);\
-				lua_pop(L, 1);\
-				printf("%s", q ? q : "table");\
-				break;\
-			}\
-			default:{\
-				printf("%s", lua_typename(L, t));\
-				break;\
-			}\
-		}\
-		printf(" ");\
-	}\
-	printf("\n");\
-	getchar();\
+void stackDump(lua_L) {
+	int i;
+	int top = lua_gettop(L);
+	for(i = 1; i <= top; i++) {
+		int t = lua_type(L, i);
+		printf("%d:", -(top-i)-1);
+		switch(t) {
+			case LUA_TNIL:
+				printf("nil");
+				break;
+			case LUA_TBOOLEAN:
+				printf(lua_toboolean(L, i) ? "true" : "false");
+				break;
+			case LUA_TNUMBER:
+				printf("%g", lua_tonumber(L, i));
+				break;
+			case LUA_TSTRING:
+				printf("%s", lua_tostring(L, i));
+				break;
+			case LUA_TFUNCTION:
+				printf("%s", lua_typename(L, t));
+				break;
+			case LUA_TTABLE: {
+				lua_getfield(L, i, "name");
+				const char* q = lua_tolstring(L, top+1, NULL);
+				lua_pop(L, 1);
+				printf("%s", q ? q : "table");
+				break;
+			}
+			default:{
+				printf("%s", lua_typename(L, t));
+				break;
+			}
+		}
+		printf(" ");
+	}
+	printf("\n");
+	getchar();
 };

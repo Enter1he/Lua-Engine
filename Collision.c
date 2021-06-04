@@ -16,7 +16,7 @@ int CC_Collide(lua_State *L){
     by = lua_tonumber(L, 5);
     br = lua_tonumber(L, 6);
 
-    lua_pushboolean(L, ( ((ax - bx)*(ax - bx) + (ay - by)*(ay - by)) < br*br + ar*ar ) );
+    lua_pushboolean(L, ( ((ax - bx)*(ax - bx) + (ay - by)*(ay - by)) <= br*br + ar*ar ) );
     return 1;
 }
 
@@ -32,7 +32,7 @@ int PS_Collide(lua_State* L){
     bw = lua_tonumber(L, 7);
     bh = lua_tonumber(L, 8);
 
-    lua_pushboolean(L, ((ax > bx )&& (ax < bx + bw )&&(ay > by) &&( ay < by + bh)) );
+    lua_pushboolean(L, ((ax >= bx )&& (ax <= bx + bw )&&(ay >= by) &&( ay <= by + bh)) );
     return 1;
 };
 
@@ -48,7 +48,7 @@ int PC_Collide(lua_State* L){
     br = lua_tonumber(L, 7);
     
 
-    lua_pushboolean(L, (bx*bx + by*by < br*br));
+    lua_pushboolean(L, (bx*bx + by*by <= br*br));
     return 1;
 };
 
@@ -67,7 +67,7 @@ int SS_Collide(lua_State *L){
     bh = lua_tonumber(L, 8);
 
 
-    lua_pushboolean(L, ((ax + aw > bx )&&(ax < bx + bw) && (ay + ah > by)&&(ay < by + bh)));
+    lua_pushboolean(L, ((ax + aw >= bx )&&(ax <= bx + bw) && (ay + ah >= by)&&(ay <= by + bh)));
 
     return 1;
 }
