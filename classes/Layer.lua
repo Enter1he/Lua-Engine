@@ -36,16 +36,22 @@ function Layer:RemoveDrawable(drawable)
     local i = drawable[order]
     local l = self[list]
     local n = #l
-
+    
     l[n], l[i] = l[i], l[n]
     if not l[i] then
         for k,v in pairs(l) do
-            print{k,v}
+            print(k,v)
         end
-        print(i, l[i].__name, drawable)
+        print(i, l[i], drawable)
+        return;
     end
     l[i][order] = i
+    l[n][order] = nil
     l[n] = nil
+end
+
+function Layer:isDrawable(drawable)
+    return drawable[order]
 end
 
 
@@ -68,6 +74,7 @@ function Layer.new(new)
     AddDrawable = Layer.AddDrawable
     RemoveDrawable = Layer.RemoveDrawable
     ReloadList = Layer.ReloadList
+    isDrawable = Layer.isDrawable
 
     return _ENV
 end

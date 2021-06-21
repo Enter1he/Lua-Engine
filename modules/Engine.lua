@@ -3,33 +3,28 @@ package.loaded.name = "loaded"
 ---------------------------------       ENGINE_PART        ----------------------------------
 
 OOP = require"modules.OOP"
+Util = require"modules.Util"
 
 EmptyFunc = function() end
 
 require"modules.Controls"
 
--- local g = require"modules.Graphics"
--- Graphics = g.Drawings
+
 _en ={
-    dt = 0.016666666666667;
+    dt = 0.015;
     screen = {w = 640, h = 480, name = "screen"};
     1;
     name = "_en";
 }
 
-
+Audio = require"Audio"
 Graphics = require"Graphics"
 
-Fonts = "C:/Windows/Fonts/" -- Windows font factory
+Fonts = Fonts or "C:/Windows/Fonts/" -- Windows font's folder
 
 
 local screen = _en.screen
---additional variables
-local key, down = {},0
 
-
-
--- Utility functions
 
 
 _mouse = {0,0}
@@ -40,9 +35,15 @@ local Destructor = {
         self:Delete()
     end
 }
+
+
 local EmptyFunc = EmptyFunc
 local DrawScene = Graphics.DrawScene
 local setmetatable = setmetatable
+local format = string.format
+local rand = math.random
+local seed = math.randomseed
+local clock = os.clock
 function NewScene(scene)
     scene = scene or {}
     local _ENV = scene
@@ -54,18 +55,18 @@ function NewScene(scene)
     KeyRelease = EmptyFunc;
     Motion = EmptyFunc;
     Button = EmptyFunc;
-    Render = DrawScene;
+    seed(clock())
+    name = name or format("%x",rand(1,30000000))
+
     setmetatable(scene, Destructor)
     
     return scene
 
 end
 
-
 Layer = require"classes.Layer"
 Text = require"classes.Text"
 Sprite = require"classes.Sprite"
-Item = require"classes.Item"
 Mob = require"classes.Mob"
 Vector = require"classes.Vector"
 Color = require"classes.Color"

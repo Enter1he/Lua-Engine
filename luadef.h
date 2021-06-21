@@ -1,6 +1,10 @@
 #include "include/lua.h"
-#include "include/lualib.h"
 #include "include/lauxlib.h"
+
+
+
+LUALIB_API void (luaL_openlibs) (lua_State *L);
+
 
 #define lua_require(L, modname){\
   lua_getglobal(L, "require");\
@@ -55,7 +59,23 @@
 
 #define Error_print(str,...) printf(str,##__VA_ARGS__); printf("\n"); getchar();
 
+#define lua_getA3(L){\
+	lua_getidx(L, -1, 1);\
+	lua_getidx(L, -2, 2);\
+	lua_getidx(L, -3, 3);\
+}
 
+#define lua_getA4(L){\
+	lua_getidx(L, -1, 1);\
+	lua_getidx(L, -2, 2);\
+	lua_getidx(L, -3, 3);\
+	lua_getidx(L, -4, 4);\
+}
+
+#define lua_getA2(L){\
+	lua_getidx(L, -1, 1);\
+	lua_getidx(L, -2, 2);\
+}
 
 void stackDump(lua_L) {
 	int i;

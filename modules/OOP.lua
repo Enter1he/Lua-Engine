@@ -65,7 +65,7 @@ local function constructor(name, o)
     return setmetatable(o, Callable)
 end
 
-local function enum(...) --basically needs strigs only
+local function enum(...) --basically needs strings only
     local arg = {...}
     local e = {}
     for i = 1, #arg do

@@ -3,7 +3,6 @@
 
 
 #include <GL/gl.h>
-
 #include <GL/glext.h>
 
 PFNGLGENBUFFERSPROC glGenBuffers; 
@@ -28,19 +27,18 @@ PFNGLVERTEXATTRIBPOINTERPROC glVertexAttribPointer;
 #include "include/freetype/freetype.h"
 #include "include/freetype/ftglyph.h"
 
-#define ALPHA_BLEND 1
-#define COLOR_BLEND 0
+
 
 const GLdouble 
 gvertex[] = {
     0, 0,
     1, 0,
-    1,-1,
-    0,-1,
+    1, 1,
+    0, 1,
     0, 0, 
     1, 0, 
-    1, 1, 
-    0, 1
+    1, -1, 
+    0, -1
 },
 tverts[] = {
     0, 1, 
@@ -48,13 +46,9 @@ tverts[] = {
     1, 0, 
     0, 0
 };
-GLuint vxVBO, tcVBO, gVBO;
-GLuint vao;
-GLdouble colors[16], texcoords[8];
+GLuint  tcVBO, gVBO, cVBO; // VBOs
 
-GLint color_idx[] = {
-    0,1,2
-};
+GLdouble colors[16], texcoords[8], text_uv[8]; // arrays that change over time
 
 
 typedef struct _spritecore{
@@ -69,7 +63,6 @@ typedef struct _textchar{
     int w,h,top;
     double dx, dy;
 }TextChar;
-
 
 
 inline int next_p2 (int a)
@@ -144,8 +137,6 @@ int LE_LoadText(lua_L)
         glBindTexture(GL_TEXTURE_2D, 0);
         free(data);
     }
-
-
     
     FT_Done_Face(face);
     FT_Done_FreeType(Library);
@@ -158,30 +149,31 @@ int LE_DrawText(lua_L)
     size_t len = 0;
     lua_getvalue(L, 1, "value");
     luaL_checklstring(L, -1, &len);
+
     const char* value = lua_tostring(L, -1);
     lua_getvalue(L, 1, "size");
     size_t size = lua_tointeger(L, -1);
+
     lua_getvalue(L, 1, "_sprite");
     TextChar *sc = lua_touserdata(L, -1);
-    lua_pop(L,2);
+    lua_settop(L,1);
+    
     lua_getvalue(L, 1, "color");
-    lua_getidx(L, 3, 1);
-    lua_getidx(L, 3, 2);
-    lua_getidx(L, 3, 3);
-    lua_getidx(L, 3, 4);
+    lua_getA4(L);
     
     colors[0] = colors[4] = colors[8] = colors[12] = lua_tonumber(L,-4);
     colors[1] = colors[5] = colors[9] = colors[13] = lua_tonumber(L,-3);
     colors[2] = colors[6] = colors[10] = colors[14] = lua_tonumber(L,-2);
     colors[3] = colors[7] = colors[11] = colors[15] = lua_tonumber(L,-1);
-    glPushMatrix();
-    
+    lua_settop(L, 1);
 
-    lua_pop(L, 5);
     lua_getvalue(L, 1, "pos");
-    lua_getidx(L, 3, 1);
-    lua_getidx(L, 3, 2);
+    lua_getA2(L);
+
     int px = lua_tonumber(L,-2), py = lua_tonumber(L,-1);
+
+    glPushMatrix();
+
     unsigned int lineW = 0;
     for (int i = 0; i < len; i++){
         char ch = value[i]; 
@@ -202,10 +194,8 @@ int LE_DrawText(lua_L)
 
         };
         if (ch != '\n'){
-            texcoords[0] = 0,         texcoords[1] = sc[ch].dy;
-            texcoords[2] = sc[ch].dx, texcoords[3] = sc[ch].dy;
-            texcoords[4] = sc[ch].dx, texcoords[5] = 0;
-            texcoords[6] = 0,         texcoords[7] = 0; 
+            text_uv[1] = text_uv[3] = sc[ch].dy;
+            text_uv[2] = text_uv[4] = sc[ch].dx;
             glTranslated(px, py, 0);
             glPushMatrix();
                 
@@ -213,16 +203,19 @@ int LE_DrawText(lua_L)
                 glEnableClientState(GL_VERTEX_ARRAY);
                 glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
+                
+                
                 glTranslated(0, -sc[ch].top,0);
-
+               
+                
                 glBindTexture(GL_TEXTURE_2D, sc[ch].tex);
                 glColorPointer(4, GL_DOUBLE, 0, colors);
                 
-                glTexCoordPointer(2, GL_DOUBLE, 0, texcoords);
+                glTexCoordPointer(2, GL_DOUBLE, 0, text_uv);
+
                 glScaled(sc[ch].w, sc[ch].h,0);
                 
                 glVertexPointer(2, GL_DOUBLE, 0, tverts);
-                
 
                 glDrawArrays(GL_QUADS, 0, 4);
                 
@@ -262,15 +255,7 @@ int LE_LoadSingleSprite(lua_L)
     glTexImage2D(GL_TEXTURE_2D, 0, 4, im->width, im->height, 0, glformat, GL_UNSIGNED_BYTE, gldata);
     
     sc->height = im->height, sc->width = im->width;
-    lua_createtable(L, 2, 2);
     
-    lua_pushinteger(L, im->width);
-    lua_seti(L, -2, 1);
-
-    lua_pushinteger(L, im->height);
-    lua_seti(L, -2, 2);
-    
-    lua_setfield(L, 1, "size");
 
     glBindTexture(GL_TEXTURE_2D, 0);
     
@@ -282,9 +267,12 @@ int LE_LoadSingleSprite(lua_L)
 int LE_DrawSingleSprite(lua_L){
     
     if (!lua_getfield(L, 1, "visible")) return 0;
+
+    lua_getvalue(L, 1, "_sprite");
+    SpriteCore *sc = lua_touserdata(L, -1);
+    
     lua_settop(L, 1);
     lua_getvalue(L, 1, "pos");
-    lua_getvalue(L, 1, "size");
     lua_getvalue(L, 1, "origin");
     
 
@@ -292,19 +280,18 @@ int LE_DrawSingleSprite(lua_L){
     lua_getidx(L, 2, 2);       //Sprite pos y
     lua_getidx(L, 3, 1);       //Sprite width
     lua_getidx(L, 3, 2);       //Sprite height
-    lua_getidx(L, 4, 1);       //Sprite origin pos x
-    lua_getidx(L, 4, 2);       //Sprite origin pos y
     
     
-    lua_Number w = lua_tonumber(L,7), h = lua_tonumber(L,8);
-    lua_Number x = lua_tonumber(L,5), xoff = w*lua_tonumber(L,9), 
-               y = lua_tonumber(L,6), yoff = h*lua_tonumber(L,10);
+    
+    lua_Number w = sc->width, h = sc->height;
+    lua_Number x = lua_tonumber(L,4), xoff = w*lua_tonumber(L,6), 
+               y = lua_tonumber(L,5), yoff = h*lua_tonumber(L,7);
     
     lua_settop(L, 1);
 
 
     lua_getvalue(L, 1, "color");
-    lua_getidx(L,2,1); lua_getidx(L,2,2); lua_getidx(L,2,3); lua_getidx(L,2,4);
+    lua_getA4(L);
     colors[0] = colors[4] = colors[8] = colors[12] = lua_tonumber(L,3);
     colors[1] = colors[5] = colors[9] = colors[13] = lua_tonumber(L,4);
     colors[2] = colors[6] = colors[10] = colors[14] = lua_tonumber(L,5);
@@ -313,10 +300,7 @@ int LE_DrawSingleSprite(lua_L){
     
     lua_settop(L, 1);
 
-    lua_getvalue(L, 1, "_sprite");
-    SpriteCore *sc = lua_touserdata(L, -1);
     
-    lua_pop(L,1);
     
     lua_getvalue(L, 1, "angle");
 
@@ -339,11 +323,15 @@ int LE_DrawSingleSprite(lua_L){
 
             
             glBindBuffer(GL_ARRAY_BUFFER, gVBO);
-            glTexCoordPointer(2, GL_DOUBLE, 0, (void*)(sizeof(gvertex)>>1));
-            glVertexPointer(2, GL_DOUBLE, 0, NULL);
+            glBufferSubData(GL_ARRAY_BUFFER, sizeof(gvertex), sizeof(colors), colors);
+            glTexCoordPointer(2,GL_DOUBLE, 0, NULL);
+            glVertexPointer(2, GL_DOUBLE, 0, (void*)sizeof(tverts));
+            glColorPointer(4,GL_DOUBLE,0,(void*)sizeof(colors));
+
             glBindBuffer(GL_ARRAY_BUFFER, 0);
-            glColorPointer(4,GL_DOUBLE,0,colors);
+
             glDrawArrays(GL_QUADS, 0, 4);
+            
             
         glBindTexture(GL_TEXTURE_2D, 0);  
         
@@ -452,21 +440,16 @@ int LE_DrawSpriteSheet(lua_L)
     double x = lua_tonumber(L, -2), y = lua_tonumber(L, -1);
     
     lua_getvalue(L, 1, "color");
-    lua_getidx(L, 5, 1);
-    lua_getidx(L, 5, 2);
-    lua_getidx(L, 5, 3);
-    lua_getidx(L, 5, 4);
+    lua_getA4(L);
     colors[0] = colors[4] = colors[8] = colors[12] = lua_tonumber(L,-4);
     colors[1] = colors[5] = colors[9] = colors[13] = lua_tonumber(L,-3);
     colors[2] = colors[6] = colors[10] = colors[14] = lua_tonumber(L,-2);
     colors[3] = colors[7] = colors[11] = colors[15] = lua_tonumber(L,-1);
     
     lua_getvalue(L, 1, "origin");
-    lua_getidx(L, -1, 1);
-    lua_getidx(L, -2, 2);
+    lua_getA2(L);
     lua_getvalue(L, 1, "size");
-    lua_getidx(L, -1, 1);
-    lua_getidx(L, -2, 2);
+    lua_getA2(L);
     
     double w = lua_tonumber(L, -2), h = lua_tonumber(L,-1);
     double offy = w*lua_tonumber(L, -4), offx = h*lua_tonumber(L, -5);
@@ -483,19 +466,15 @@ int LE_DrawSpriteSheet(lua_L)
     
     lua_getvalue(L, -1, "anim");
     lua_getidx(L, -1, anim);
-    lua_getidx(L, -1, 1);
-    lua_getidx(L, -2, 2);
-    lua_getidx(L, -3, 3);
-    lua_getidx(L, -4, 4);
+    lua_getA4(L);
     
     int tw = lua_tointeger(L, -2), th = lua_tointeger(L, -1);
     int tx = lua_tointeger(L, -4) + frame*tw, ty = lua_tointeger(L, -3); 
     double ox = (double)tw/sc->width, oy = (double)th/sc->height;
 
-    texcoords[0] = (double)tx/sc->width; texcoords[1] = -(double)ty/sc->height; 
-    texcoords[2] = texcoords[0] + ox;        texcoords[3] = texcoords[1]; 
-    texcoords[4] = texcoords[2];             texcoords[5] = texcoords[1] - oy; 
-    texcoords[6] = texcoords[0];             texcoords[7] = texcoords[5]; 
+    texcoords[6] = texcoords[0] = (double)tx/sc->width; texcoords[3] = texcoords[1] = -(double)ty/sc->height; 
+    texcoords[4] = texcoords[2] = texcoords[0] + ox;    texcoords[7] = texcoords[5] = texcoords[1] - oy;
+
 
     glPushMatrix();
         
@@ -513,12 +492,14 @@ int LE_DrawSpriteSheet(lua_L)
         
         glScaled(w, h, 0);
         
-        
-        glTexCoordPointer(2, GL_DOUBLE, 0, texcoords);
-        glColorPointer(4, GL_DOUBLE, 0, colors);
+        glBindBuffer(GL_ARRAY_BUFFER, cVBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(texcoords), texcoords);
+        glBufferSubData(GL_ARRAY_BUFFER, sizeof(colors), sizeof(colors), colors);
+        glTexCoordPointer(2, GL_DOUBLE, 0, (void*)0);
+        glVertexPointer(2, GL_DOUBLE, 0, (void*)sizeof(texcoords));
+        glColorPointer(4, GL_DOUBLE, 0, (void*)(sizeof(colors)));
 
-        glBindBuffer(GL_ARRAY_BUFFER, vxVBO);
-        glVertexPointer(2, GL_DOUBLE, 0, NULL);
+        
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         
         
@@ -547,9 +528,8 @@ int LE_DrawLayer(lua_L){
     glTranslated(-lua_tonumber(L, -2), -lua_tonumber(L, -1), 0);
     
     lua_getvalue(L, 1, "size");
-    lua_getidx(L, -1, 1);
-    lua_getidx(L, -2, 2);
-
+    lua_getA2(L);
+    
     glScaled(lua_tonumber(L, -2), lua_tonumber(L, -1), 0);
     lua_getvalue(L, 1, "blend");
     int check = lua_tointeger(L, -1);
@@ -630,10 +610,7 @@ int LE_DrawCircle(lua_L){
         
         lua_getglobal(L, "Graphics");
         lua_getvalue(L, -1, "color");
-        lua_getidx(L,-1, 1);
-        lua_getidx(L,-2, 2);
-        lua_getidx(L,-3, 3);
-        lua_getidx(L,-4, 4);
+        lua_getA4(L);
         glColor4d(lua_tonumber(L, -4), lua_tonumber(L, -3), lua_tonumber(L, -2), lua_tonumber(L, -1));
 
         
@@ -726,8 +703,7 @@ int LE_DrawRect(lua_L){
 
 int ModuleGC(lua_L){
     glDeleteBuffers(1, &gVBO);
-    glDeleteBuffers(1, &vxVBO);
-    
+    glDeleteBuffers(1, &cVBO);
     if (point) free(point);
     return 0;
 }
@@ -783,20 +759,25 @@ int LUA_DLL luaopen_Graphics(lua_L)
     glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC) wglGetProcAddress("glVertexAttribPointer");
     glDeleteVertexArrays = (PFNGLDELETEVERTEXARRAYSPROC) wglGetProcAddress("glDeleteVertexArrays");
 
-    glewInit();
+    
     glGenBuffers(1, &gVBO);
     glBindBuffer(GL_ARRAY_BUFFER, gVBO );
+    glBufferData(GL_ARRAY_BUFFER, sizeof(colors)*2, NULL, GL_DYNAMIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(gvertex), gvertex);
+    glBufferSubData(GL_ARRAY_BUFFER, sizeof(gvertex), sizeof(colors), colors);
     
-    size_t gvs = sizeof(gvertex)>>1;
-    glBufferData(GL_ARRAY_BUFFER, sizeof(gvertex), NULL, GL_STATIC_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, gvs, gvertex);
-    glBufferSubData(GL_ARRAY_BUFFER, gvs, gvs, gvertex+8);
+
 
     
 
-    glGenBuffers(1, &vxVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, vxVBO);
-    glBufferData(GL_ARRAY_BUFFER, 8*sizeof(GLdouble), gvertex+8, GL_STATIC_DRAW);
+
+    glGenBuffers(1, &cVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, cVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(colors)*2, NULL, GL_DYNAMIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(texcoords), texcoords);
+    glBufferSubData(GL_ARRAY_BUFFER, sizeof(texcoords), sizeof(texcoords), gvertex);
+    glBufferSubData(GL_ARRAY_BUFFER, sizeof(colors), sizeof(colors), colors);
+
 
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);

@@ -8,7 +8,7 @@ local sW, sH, aH = _en.screen.w, _en.screen.h
 local player = { 
     pos = {100,50};
     origin = {0.5, -0.5};
-    size = {50,60};
+    size = {100,100};
     
     speed = 100;
     walk = false;
@@ -37,6 +37,7 @@ local step;
 local TDS = NewScene{
     
 }
+local l = Layer.new{}
 
 function TDS:Load()
     
@@ -45,7 +46,8 @@ function TDS:Load()
     text:Load()
     --flower:Load("Scenes/TDS/res/Flower/Flower.png")
     player:Load("Scenes/TDS/res/player/TopDownMen",0)
-   
+    l:AddDrawable(text)
+    l:AddDrawable(player)
     
 end
 
@@ -62,10 +64,7 @@ function TDS:Update()
 end
 
 function TDS:Draw()
-    player:Draw()
-    -- text:Draw()
-    
-    
+    l:Draw()    
 end
 
 function TDS:KeyPress(key, down)

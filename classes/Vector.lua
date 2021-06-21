@@ -1,4 +1,4 @@
-local setmetatable = debug.setmetatable
+
 local type = type 
 local Vector;
 
@@ -38,7 +38,7 @@ Vector = {
     __unm =
     function(a)
         local o = {}
-        for i = 1, #t do
+        for i = 1, #a do
             o[i] = -a[i]
         end
         return Vector(o)

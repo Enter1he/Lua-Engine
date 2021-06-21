@@ -12,30 +12,23 @@ local Mob = {
 
 function Mob.newMob(new, x, y, speed)
     new = new or {}
-    new.pos = {x or 0, y or 0}
-    new.vel = {0,0}
-    new.over = true
-    new.to = 1
+    local _ENV = new
+    pos = pos or {0, 0, 0}; pos[1] = x; pos[2] = y
+    
+    vel = vel or {0,0,0}
+    over = true
+    to = 1
     new.speed = speed or 10
-    new.Stop = Mob.Stop
-    new.isMoving = Mob.isMoving
-    new.Vel_Move = Mob.Vel_Move
-    new.MoveTo = Mob.MoveTo
-    new.RMoveTo = Mob.RMoveTo
-    new.RVel_Move = Mob.RVel_Move
-
+    Stop = Mob.Stop
+    isMoving = Mob.isMoving
+    Vel_Move = Mob.Vel_Move
+    MoveTo = Mob.MoveTo
+    RMoveTo = Mob.RMoveTo
+    RVel_Move = Mob.RVel_Move
+    GetTo = Mob.GetTo
 end
 
-function Mob.newPlayer(new)
-    new = new or {}
-    new.pos = new.pos or {0,0}
-    new.vel = new.vel or {0,0}
-    new.speed = new.speed or 10
-    new.Stop = Mob.Stop
-    new.isMob = Mob.isMob
-    new.isMoving = Mob.isMoving
-    new.Vel_Move = Mob.Vel_Move
-end
+
 
 function Mob:Stop()
     self.vel[1] = 0; self.vel[2] = 0;
@@ -53,70 +46,61 @@ function Mob:Tile_Move()
     local s = self.speed
     
 end
-
-function Mob:RVel_Move(amp1, amp2, from, to)
-    amp1 = amp1 or 1
-    amp2 = amp2 or 1
-    from = from or {0,10}
-    to = to or {0,10}
-    local sdt = self.speed * dt
-    local pos, vel = self.pos, self.vel
-    vel[1] = math.random(-amp1, amp2)
-    vel[2] = math.random(-amp1, amp2)
-    
-    if pos[1] + vel[1] < from[1] and pos[1] + vel[1] > to[1] then
-        vel[1] = -vel[1] 
-    end
-    if pos[2] + vel[2] < from[2] and pos[2] + vel[2] > to[2] then
-        vel[2] = -vel[2] 
-    end      
-
-    pos[1] = pos[1] + vel[1] * sdt
-    pos[2] = pos[2] + vel[2] * sdt
-end
-
+local hlfv = 0.85090352453412 -- sin 45
+local int = int
 function Mob:Vel_Move()
     local sdt = self.speed * dt
-    self.pos[1] = self.pos[1] + self.vel[1] * sdt
-    self.pos[2] = self.pos[2] + self.vel[2] * sdt
+    local pos, vel = self.pos, self.vel
+    if vel[1] ~= 0 and vel[2] ~= 0 then
+        vel[1] = hlfv*vel[1]; vel[2] = hlfv*vel[2]
+    end
+    
+    pos[1] = pos[1] + int(vel[1] * sdt)
+    pos[2] = pos[2] + int(vel[2] * sdt)
+    
 end
+
+local atan = math.atan
+local sin, cos = math.sin, math.cos
 
 function Mob:MoveTo( x, y)
     if self.over == false then
-        local ox, oy = self.pos[1], self.pos[2]
-        local sdt = self.speed * dt
         
-        
-        if oy > y then self.vel[2] = -1; 
-        elseif oy < y then self.vel[2] = 1;  end
+        local pos, vel = self.pos, self.vel
+        local ox, oy = pos[1], pos[2]
 
-        if ox > x then self.vel[1] = -1; 
-        elseif ox < x then self.vel[1] = 1; end
+        if oy > y then vel[2] = -1; 
+        elseif oy < y then vel[2] = 1;  end
+
+        if ox > x then vel[1] = -1; 
+        elseif ox < x then vel[1] = 1; end
         
         self:Vel_Move()
 
-        ox, oy = self.pos[1], self.pos[2]
-        local c1 = (self.vel[1] <= 0 and ox <= x) or (self.vel[1] >= 0 and ox >= x)
-        local c2 = (self.vel[2] <= 0 and oy <= y) or (self.vel[2] >= 0 and oy >= y)
+        ox, oy = pos[1], pos[2]
+        local c1 = (ox >= x - 1 and ox <= x + 1)
+        local c2 = (oy >= y - 1 and oy <= y + 1)
         
-        self.vel[1], self.vel[2] = 0, 0
-        self.pos[1] = c1 and x or self.pos[1]
-        self.pos[2] = c2 and y or self.pos[2]
+        
+        pos[1] = c1 and x or ox
+        pos[2] = c2 and y or oy
         self.over = c1 and c2
         
         
         return true
-    elseif self.over == true then
+    end
+    if self.over == true then
         
         self.over = false
         return self.over
     end
 end
-
+local offset = 1
 function Mob:RMoveTo(from, to)
     if self.over == false then
         
-        local ox, oy = self.pos[1], self.pos[2]
+        local pos, vel = self.pos, self.vel
+        local ox, oy = pos[1], pos[2]
         if not self.rx then
             self.rx = math.random(from[1], from[2])
             self.ry = math.random(to[1], to[2])
@@ -124,26 +108,25 @@ function Mob:RMoveTo(from, to)
         local x, y = self.rx, self.ry
         
         
-        self.vel[1], self.vel[2] = 0, 0
+        vel[1], vel[2] = 0, 0
 
 
+        if oy > y then vel[2] = -1;
+        elseif oy < y then vel[2] = 1;  end
 
-        if oy > y then self.vel[2] = -1; 
-        elseif oy < y then self.vel[2] = 1;  end
-
-        if ox > x then self.vel[1] = -1; 
-        elseif ox < x then self.vel[1] = 1; end
+        if ox > x then vel[1] = -1;
+        elseif ox < x then vel[1] = 1; end
         
         self:Vel_Move()
 
-        ox, oy = self.pos[1], self.pos[2]
-        local c1 = (self.vel[1] <= 0 and ox <= x) or (self.vel[1] >= 0 and ox >= x)
-        local c2 = (self.vel[2] <= 0 and oy <= y) or (self.vel[2] >= 0 and oy >= y)
+        ox, oy = pos[1], pos[2]
+        local c1 = (ox >= x - offset and ox <= x + offset)
+        local c2 = (oy >= y - offset and oy <= y + offset)
         
         
 
-        self.pos[1] = c1 and x or self.pos[1]
-        self.pos[2] = c2 and y or self.pos[2]
+        pos[1] = c1 and x or ox
+        pos[2] = c2 and y or oy
         self.over = c1 and c2
         if self.over then
             self.rx = false
@@ -151,73 +134,43 @@ function Mob:RMoveTo(from, to)
         end
         
         return true
-    elseif self.over == true then
+    else 
         self.rx = math.random(from[1], from[2])
         self.ry = math.random(to[1], to[2])
         self.over = false
         return self.over
     end
 end
+local ptime = Lalloc(1)
+function Mob:GetTo(x,y, time)
+    time = time or 1
+    local atime = self[ptime] or time
+    local pos = self.pos
+    local ox, oy = pos[1], pos[2]
+
+    local dx, dy = ox - x, oy - y
+    local vx, vy = -dx/atime, -dy/atime
+    
+    pos[1] = ox + vx
+    pos[2] = oy + vy
+    dx = dx - vx
+    self[ptime] = atime - 1 > 0 and atime - 1 or nil
+
+end
 
 function Mob:Patrol(s_pos, f_pos)
     if self.to == 1 then
         
         self.to = self:MoveTo( s_pos[1], s_pos[2]) and 1 or 2
-        
-    elseif self.to == 2 then
+       return; 
+    end
+    if self.to == 2 then
         
         self.to = self:MoveTo(f_pos[1], f_pos[2]) and 2 or 1
-        
+        return;
     end
 end
 
-function Mob:RandomSearch(from, to)
-    if not self.over then
-        
-        local ox, oy = self.pos[1], self.pos[2]
-        if not self.rx then
-            self.rx = math.random(from[1], from[2])
-            self.ry = math.random(to[1], to[2])
-        end
-        local x, y = self.rx, self.ry
-        local sdt = self.speed * dt
-        
-        self.vel[1], self.vel[2] = 0, 0
-
-
-
-        if oy > y then self.vel[2] = -1; self.angle = 2;
-        elseif oy < y then self.vel[2] = 1; self.angle = 4; end
-
-        if ox > x then self.vel[1] = -1; self.angle = 3
-        elseif ox < x then self.vel[1] = 1; self.angle = 1 end
-        
-        self:Vel_Move()
-        ox, oy = self.pos[1], self.pos[2]
-        local c1 = (self.vel[1] <= 0 and ox <= x) or (self.vel[1] >= 0 and ox >= x)
-        local c2 = (self.vel[2] <= 0 and oy <= y) or (self.vel[2] >= 0 and oy >= y)
-        
-        
-        self.pos[1] = c1 and x or self.pos[1]
-        self.pos[2] = c2 and y or self.pos[2]
-        self.over = c1 and c2
-        return true
-    else
-        if self.c.length > 0 then
-            local n = self.to
-            self.rx = self.c[n].pos[1]
-            self.ry = self.c[n].pos[2]
-            self.c.length = self.c.length - 1
-        else
-            self.rx = math.random(from[1], from[2])
-            self.ry = math.random(to[1], to[2])
-            
-        end
-        self.over = false
-
-        return false
-    end
-end
 
 function Mob:Path(args)
     
@@ -229,7 +182,7 @@ function Mob:Path(args)
 end
 
 
-OOP.inheritDeep(Mob, Sprite)
+
 
 
 

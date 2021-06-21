@@ -8,27 +8,31 @@ local Sprite = {
     frame = 0;
     rate = 0;
     angle = 0;
+    visible = true;
 }
 
-local af = Lalloc(1)
+
 
 
 function Sprite:PlayAnim( anim, loop, rate, len)
     local r = self.rate
-    self.anim = anim
-    if r < rate then
-        self.rate = self.rate + 1
-    elseif r == rate then
-        
-        if self[af] < len then
-            self[af] = self[af] + 1
-        else
-            self[af] = loop and 1 or self[af]
-        end
-        self.rate = 0
-        self.frame = self[af]
+    if anim > #self.src.anim then 
+        return error("No such animation")
     end
-
+    if self.anim ~= anim then
+        self.frame = 1
+        
+    end
+    self.anim = anim
+    self.rate = self.rate + 1
+    if r >= rate then
+        local af = self.frame
+        af = af + 1
+        af = af > len and (loop and 1 or len) or af
+        self.rate = 0
+        self.frame = af
+        return;
+    end
 end
 
 function Sprite.newSimple(new)
@@ -39,10 +43,12 @@ function Sprite.newSimple(new)
     color = color or {1,1,1,1}
     size = size or {1,1}
     angle = angle or 0
+    visible = visible or true
 
     Load = Load or Graphics.LoadSprite
     Draw = Draw or Graphics.DrawSprite
     CopySprite = Sprite.CopySprite
+    isSprite = Sprite.isSprite
 
     return new
 end
@@ -58,25 +64,40 @@ function Sprite.newSheet(new)
     anim = anim or 1
     frame = frame or 1
     rate = rate or 1
-    new[af] = new[af] or 1
+    visible = visible or true
     
     Load = Load or Graphics.LoadSpriteSheet
     Draw = Draw or Graphics.DrawSpriteSheet
     PlayAnim = Sprite.PlayAnim
     CopySprite = Sprite.CopySprite
     GetSize = Graphics.GetSize
+    isSprite = Sprite.isSprite
     
     return new
 end
 
 function Sprite:CopySprite(copy)
-    copy.core = self.core
+    copy._sprite = self._sprite
     copy.size = self.size
     copy.origin = self.origin
     copy.color = self.color
     copy.src = self.src
     copy.Draw = self.Draw
     copy.Load = self.Load
+    copy.visible = self.visible
 end
+
+function Sprite:isSprite(spr)
+    local t = type(spr)
+    if t == 'userdata' then
+        return self._sprite == spr;
+    elseif t == 'table' then
+        return self._sprite == spr._sprite;
+    end
+
+    return nil
+end
+
+
 
 return OOP.class('Sprite', Sprite)
