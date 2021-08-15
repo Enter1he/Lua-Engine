@@ -1,46 +1,15 @@
 #include "luadef.h"
+#include "iupdef.h"
+#include "threads.h"
+
 #ifdef WIN32
   #include <windows.h>
 #endif
 
 #include <GL/gl.h>
-
-
-#include "iupdef.h"
-
-
-#include <pthread.h>
-
 #include <time.h>
 
-
-#define T_args void* args
-
-typedef void* TCallback;
-
-
-typedef struct _pthread {
-  pthread_t thread; 
-  pthread_cond_t on; 
-  pthread_mutex_t mute;
-}Pthread;
-
-void CreatePthread(Pthread *t, TCallback tfunc){
-    
-  pthread_create(&t->thread, NULL, tfunc, NULL);
-  pthread_cond_init(&t->on, NULL);
-  pthread_mutex_init(&t->mute, NULL);
-}
-
-void DestroyPthread(Pthread *t){
-    
-  pthread_detach(t->thread);
-  pthread_cond_destroy(&t->on);
-  pthread_mutex_destroy(&t->mute);
-}
-
-
-
+//////////////////////// VARIABLE INITIALIZATION \\\\\\\\\\\\\\\\\\\\\\
 
 char key; int down;
 Ihandle *zbox, *cnv, *cnv2, *dg, *upd; // Iup handles setup
@@ -53,11 +22,12 @@ int fpslmt = 61, ftlim;
 short frames;
 double ft = 0.01, fps = 0;
 
-
 lua_State *l, *nl, *ll; // main, thread and loading stacks pointers
-int sceneindex;
+int sceneindex = 1;
 
       /*main stack positions*/
+const char numArgs = 6;
+
 enum stackValue{
   ScEnum = 1,
   CurScene,
@@ -67,11 +37,6 @@ enum stackValue{
   Default
 };
 
-
-const char numArgs = 6;
-
-
-
 Pthread Loading; 
 enum LoadState{
   NEW_LOAD = 0,
@@ -80,6 +45,51 @@ enum LoadState{
   RESUME_LOAD = -1
 };
 int loadScene = NEW_LOAD;
+
+//////////////////////// FUNCTION INITIALIZATION \\\\\\\\\\\\\\\\\\\\\\
+
+int SetFpsLimit(lua_L){
+  fpslmt = lua_tointeger(L,1);
+  ftlim = 1000/fpslmt;
+  IupSetInt(upd, "TIME", ftlim);
+  return 0;
+}
+
+
+int Lalloc(lua_L)
+{
+  lua_newuserdata(L, luaL_checkinteger(L, 1));
+  return 1;
+}
+
+int toInt(lua_L){
+  if (!lua_isinteger(L,1)){
+    if(!lua_isnumber(L,1)) return 0;
+    lua_pushinteger(L, (lua_Integer)lua_tonumber(L,1));
+  }
+  return 1;
+}
+
+int Close(lua_L)
+{
+  
+  return exet = 0;
+}
+
+int ChangeScene(lua_L){
+  
+  sceneindex = luaL_checkinteger(L, 1);
+
+  loadScene = NEW_LOAD;
+  return 0;
+}
+
+int ResumeLoading(lua_L){
+  pthread_cond_signal(&Loading.on); // calling loading thread
+  return 0;
+}
+
+//////////////////////// CALLBACK INITIALIZATION \\\\\\\\\\\\\\\\\\\\\\
 
 TCallback loading_Scene(T_args)
 {
@@ -106,7 +116,6 @@ TCallback loading_Scene(T_args)
         }
       }
       
-      
       lua_getvalue(nl, -1, "Load");
       if (lua_topointer(nl, -1) != EmptyFunc){
         lua_pushvalue(nl, -2);
@@ -126,27 +135,25 @@ TCallback loading_Scene(T_args)
   return 0;
 }
 
-
-
-
-
 int map(Ihandle* self)
 {
   IupGLMakeCurrent(cnv);
-  
-  int err;
 
   lua_require(l, "modules.Engine");
   lua_getglobal(l, "EmptyFunc");
   EmptyFunc = lua_topointer(l, -1);
   lua_pop(l, 2);
   
-  lua_require(l, "Scenes.SceneEnum");
+  lua_getglobal(l, "SceneEnum");
   
-  
-  lua_require(l, "Scenes.default");
+  if(lua_getglobal(l, "defaultScene")==LUA_TSTRING){
+    lua_require(l, lua_tostring(l,-2));
+    lua_remove(l, -2);
+  }else{
+    lua_pop(l,1);
+    lua_getglobal(l, "_default");
+  }
 
-  
 
   lua_getglobal(l, "Controls");
   
@@ -154,10 +161,9 @@ int map(Ihandle* self)
   lua_nameAtable(l, Keys, "Keys");
 
   nl = lua_newthread(l);
-
   lua_pushvalue(l, ScEnum);
   lua_xmove(l, nl, 1);
-  
+
   lua_getvalue(l, CurScene, "Load");
   
   if (lua_topointer(l, -1) != EmptyFunc){
@@ -174,7 +180,6 @@ int map(Ihandle* self)
   return 0;
 }
 
-
 int resize(Ihandle* self, int width, int height)
 {
 
@@ -188,15 +193,12 @@ int resize(Ihandle* self, int width, int height)
   lua_getvalue(l, -1, "w");
   lua_getvalue(l, -2, "h");
   
-  
   glOrtho(0, lua_tointeger(l, -2), lua_tointeger(l, -1), 0, 1,0);
   lua_settop(l, numArgs);
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
   
 }
-
-
 
 int Key_press(Ihandle* self, int c, int press)
 {
@@ -274,7 +276,6 @@ int Button_cb(Ihandle* ih, int button, int pressed, int x, int y, char* status)
   return 0;
 }
 
-
 int update_cb()
 {   
     
@@ -302,7 +303,7 @@ int update_cb()
   return 0;
 }
 
-int Idle(Ihandle * self){
+int idle(Ihandle * self){
   switch(loadScene){ 
 
     case NEW_LOAD: {
@@ -350,7 +351,6 @@ int draw(Ihandle *self, float x, float y)
     }
   }
   
-  
   frames++;
   IupGLSwapBuffers(cnv); 
   
@@ -363,14 +363,12 @@ int Fps_time(Ihandle* self){
   if (frames == 0) return 0;
   ft = 1000.0/frames;
   fps = (double)frames;
-  
   frames = 0;
 
   lua_pushnumber(l, fps);
   lua_setglobal(l, "fps");
   lua_pushnumber(l, ft);
   lua_setglobal(l, "ft");
-
 
   lua_settop(l, numArgs);
   return 0;
@@ -398,25 +396,16 @@ LONGLONG CpuMs(){
 
 int EngineBoot(int *argc, char ***argv)
 {
-  int ret; 
-  
-  
-  ret = IupOpen(argc, argv);
+  int ret = IupOpen(argc, argv);
 
-  
+  IupSetFunction("IDLE_ACTION", (Icallback)idle);
 
   IupGLCanvasOpen();
-  
-  
-  
+
   cnv = IupGLCanvas(NULL);
-  
-  IupSetFunction("IDLE_ACTION", (Icallback)Idle);
   IupSetHandle("cnvmain", cnv);
-  
   IupSetAttribute(cnv, "BUFFER", "DOUBLE");
   IupSetAttribute(cnv, "RASTERSIZE", "640x480");
-
   IupSetCallbacks(cnv, "KILLFOCUS_CB", (Icallback)Refocus, 
                        "KEYPRESS_CB", (Icallback) Key_press,
                        "BUTTON_CB", (Icallback) Button_cb,
@@ -436,35 +425,23 @@ int EngineBoot(int *argc, char ***argv)
   IupSetAttribute(dg, "SIZE", "640x320");
   IupSetCallback(dg, "DESTROY_CB", (Icallback) close_cb);
   
-  
-  
   lua_pushnumber(l, fps);
   lua_setglobal(l, "fps");
   lua_pushnumber(l, ft);
   lua_setglobal(l, "ft");
 
-  // upd = IupTimer();
-  
-  // IupSetInt(upd, "TIME", 1000/fpslmt - 2 );
-  // IupSetCallback(upd, "ACTION_CB", (Icallback) update_cb);
-  // IupSetAttribute(upd, "RUN", "Yes");
-
-
   fpst = IupTimer();
-  
   IupSetInt(fpst, "TIME", 1000);
   IupSetCallback(fpst, "ACTION_CB", (Icallback) Fps_time);
   IupSetAttribute(fpst, "RUN", "Yes");
 
   CreatePthread(&Loading, loading_Scene);
   
-  
   ftlim = 1000/fpslmt;
   IupShow(dg);
   IupSetFocus(cnv);
   LONGLONG fpst_c = CpuMs();
   while (exet){
-    
     
     if (CpuMs()-fpst_c >= ftlim){
       
@@ -475,53 +452,13 @@ int EngineBoot(int *argc, char ***argv)
     IupLoopStep();
   };
   
-  
   IupDestroy(dg);
   IupClose();
   
   return 0;
 }
 
-int SetFpsLimit(lua_L){
-  fpslmt = lua_tointeger(L,1);
-  ftlim = 1000/fpslmt;
-  IupSetInt(upd, "TIME", ftlim);
-  return 0;
-}
-
-
-int Lalloc(lua_L)
-{
-  lua_newuserdata(L, luaL_checkinteger(L, 1));
-  return 1;
-}
-
-int toInt(lua_L){
-  if (!lua_isinteger(L,1)){
-    if(!lua_isnumber(L,1)) return 0;
-    lua_pushinteger(L, (lua_Integer)lua_tonumber(L,1));
-  }
-  return 1;
-}
-
-int Close(lua_L)
-{
-  
-  return exet = 0;
-}
-
-int ChangeScene(lua_L){
-  
-  sceneindex = luaL_checkinteger(L, 1);
-
-  loadScene = NEW_LOAD;
-  return 0;
-}
-
-int ResumeLoading(lua_L){
-  pthread_cond_signal(&Loading.on); // calling loading thread
-  return 0;
-}
+//////////////////////// MAIN INITIALIZATION \\\\\\\\\\\\\\\\\\\\\\
 
 int main(int argc, char **argv)
 {
@@ -535,14 +472,11 @@ int main(int argc, char **argv)
   lua_register(l, "ResumeLoading", ResumeLoading);
   lua_register(l, "int", toInt);
   lua_register(l, "SetFpsLimit", SetFpsLimit);
-  
 
   lua_require(l, "config");
   lua_getglobal(l, "startscene");
   sceneindex = luaL_checkinteger(l, -1);
   lua_pop(l,2);
-  
-  
   
   EngineBoot(&argc, &argv);
 

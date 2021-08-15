@@ -17,7 +17,7 @@ local text = new(
     { 
         value = "fr\nam\ne:";
         pos = {10, 50};
-        font = Fonts.."consola.ttf";
+        font = nil;
         size = 14;
         color = {1,1,1,1}
     }, Text
@@ -85,7 +85,9 @@ local function drawnpc(self)
 end 
 
 
-
+function AoS()
+    
+end
 
 
 
@@ -156,17 +158,15 @@ function Sim.Load(Sim)
         end
         npc.length = npc.length + humans
     end
-    print("Hey")
+
     main:AddDrawable(text)
     music = Sound.new{
         pos = {0,0,0};
         pitch =1;
-        max_distance = 3000;
-        rolloff = 0.5;
+        max_distance = 30;
+        rolloff = 1;
     }
     
-
-
     Audio.LoadSound(music,"Test.ogg")
     Listener.pos = player.pos
     

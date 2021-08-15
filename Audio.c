@@ -54,6 +54,8 @@ void alPrintError(int line, const char* file){
     }
 }
 
+
+
 int LU_CheckFileExt(const char* name, const char* ext){
     char *c = (char*)name;
     char *d;
@@ -429,7 +431,7 @@ int LUA_DLL luaopen_Audio(lua_L)
     alListener3f(AL_POSITION, 0.0f, 0.0f, 0.0f);
     alListenerfv(AL_ORIENTATION, LisOri);
     
-    alDistanceModel(AL_INVERSE_DISTANCE);
+    alDistanceModel(AL_LINEAR_DISTANCE);
     luaL_newlib(L, Sound);
     lua_setglobal(L, "Sound");
     lua_getglobal(L, "Sound");

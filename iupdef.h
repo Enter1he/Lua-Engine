@@ -23,3 +23,4 @@ IUP_API int IupLoopStep(void);
 IUP_API void IupRedraw(Ihandle* ih, int children);
 IUP_API void IupUpdate(Ihandle *ih);
 IUP_API void IupDestroy(Ihandle* ih);
+void IupMessageError(Ihandle* parent, const char *message);

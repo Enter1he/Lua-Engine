@@ -1,4 +1,5 @@
 #include "luadef.h"
+#include "iupdef.h"
 #include <windows.h>
 
 
@@ -47,7 +48,7 @@ tverts[] = {
     0, 0
 };
 GLuint  tcVBO, gVBO, cVBO; // VBOs
-
+GLuint gVAO;
 GLdouble colors[16], texcoords[8], text_uv[8]; // arrays that change over time
 
 
@@ -77,11 +78,11 @@ inline int next_p2 (int a)
 
 int LE_LoadText(lua_L)
 {
-    lua_getvalue(L, 1, "font");
-    const char *folder = lua_tostring(L, -1);
+    if(lua_getfield(L, 1, "font") != LUA_TSTRING) fprintf(stderr, "font_folder should be a string!");
+    const char *font_folder = lua_tostring(L, -1);
 
     lua_getvalue(L, 1, "size");
-    unsigned int h = lua_tointeger(L,-1);
+    size_t h = lua_tointeger(L,-1);
 
     lua_pop(L, 2);
 
@@ -91,18 +92,18 @@ int LE_LoadText(lua_L)
     
     FT_Library Library = 0; FT_Face face = 0;
     FT_Init_FreeType(&Library);
-    FT_New_Face(Library, folder, 0, &face);
+    FT_New_Face(Library, font_folder, 0, &face);
     FT_Set_Char_Size( face, h << 6, h << 6, 96, 96);
 
     
     for (unsigned char ch = 0; ch < 128; ch++){
         
         if(FT_Load_Glyph( face, FT_Get_Char_Index( face, ch ), FT_LOAD_DEFAULT ))
-            printf("%s %d: FT_Load_Glyph failed",  __FILE__ , __LINE__);
+            printf("%s %s %d: FT_Load_Glyph failed",  __FILE__, __func__ , __LINE__);
  
         FT_Glyph glyph;
         if(FT_Get_Glyph( face->glyph, &glyph ))
-            printf("%s %d: FT_Get_Glyph failed", __FILE__ , __LINE__);
+            printf("%s %s %d: FT_Get_Glyph failed", __FILE__, __func__ , __LINE__);
 
         FT_Glyph_To_Bitmap( &glyph, ft_render_mode_normal, 0, 1 );
         FT_BitmapGlyph bitmap_glyph = (FT_BitmapGlyph)glyph;
@@ -302,6 +303,7 @@ int LE_DrawSingleSprite(lua_L){
 
     
     
+    
     lua_getvalue(L, 1, "angle");
 
     
@@ -321,7 +323,7 @@ int LE_DrawSingleSprite(lua_L){
             
             glBindTexture(GL_TEXTURE_2D, sc->tex);
 
-            
+            // glBindVertexArray(gVAO);
             glBindBuffer(GL_ARRAY_BUFFER, gVBO);
             glBufferSubData(GL_ARRAY_BUFFER, sizeof(gvertex), sizeof(colors), colors);
             glTexCoordPointer(2,GL_DOUBLE, 0, NULL);
@@ -759,15 +761,15 @@ int LUA_DLL luaopen_Graphics(lua_L)
     glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC) wglGetProcAddress("glVertexAttribPointer");
     glDeleteVertexArrays = (PFNGLDELETEVERTEXARRAYSPROC) wglGetProcAddress("glDeleteVertexArrays");
 
+
     
     glGenBuffers(1, &gVBO);
     glBindBuffer(GL_ARRAY_BUFFER, gVBO );
     glBufferData(GL_ARRAY_BUFFER, sizeof(colors)*2, NULL, GL_DYNAMIC_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(gvertex), gvertex);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(texcoords), gvertex+8);
+    glBufferSubData(GL_ARRAY_BUFFER, sizeof(texcoords), sizeof(texcoords), gvertex);
     glBufferSubData(GL_ARRAY_BUFFER, sizeof(gvertex), sizeof(colors), colors);
     
-
-
     
 
 

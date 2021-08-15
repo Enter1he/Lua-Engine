@@ -1,10 +1,15 @@
+#ifndef LUADEF_H
+#define LUADEF_H
+
 #include "include/lua.h"
 #include "include/lauxlib.h"
 
-
-
 LUALIB_API void (luaL_openlibs) (lua_State *L);
 
+#define LUA_DLL __declspec(dllexport)
+#define lua_L lua_State *L
+#define lua_Table static const struct luaL_Reg  // making big thing small
+#define lua_eoT {NULL, NULL} 				 	//
 
 #define lua_require(L, modname){\
   lua_getglobal(L, "require");\
@@ -15,12 +20,9 @@ LUALIB_API void (luaL_openlibs) (lua_State *L);
   }\
 }
 
-#define lua_Table static const struct luaL_Reg  // making big thing small
-#define lua_eoT {NULL, NULL} 				 	//
+#define lua_getvalue(L, idx, name) if(!lua_getfield(L, idx, name)) (fprintf(stderr, "%s %s line %d: no %s defined in table\n", __func__, __FILE__ , __LINE__, name))
 
-#define lua_getvalue(L, idx, name) if(!lua_getfield(L, idx, name)) printf("%s line %d: no %s defined in table\n", __FILE__ , __LINE__, name)
-
-#define lua_getidx(L, idx, n) if(!lua_geti(L, idx, n)) printf("%s line %d: no %d defined in table\n", __FILE__ , __LINE__, n)
+#define lua_getidx(L, idx, n) if(!lua_geti(L, idx, n)) (fprintf(stderr, "%s %s line %d: no %d defined in table\n", __func__, __FILE__ , __LINE__, n), getchar())
 
 #define lua_nameAtable(L, idx, name){\
 	lua_pushstring(L, name);\
@@ -41,19 +43,15 @@ LUALIB_API void (luaL_openlibs) (lua_State *L);
   lua_call(L, 1, 0);\
 }
 
-#define lua_tableContets(L, idx){\
-	lua_pushnil(L);\
-  while (lua_next(L, idx) != 0) { \
-    printf("%s - %s\n",\
-            lua_isstring(L, -2) ? lua_tostring(L, -2) : lua_typename(L, lua_type(L, -2)),\
-            lua_typename(L, lua_type(L, -1)));\
-    lua_pop(L, 1);\
-  }\
+void lua_tableContets(lua_L, int idx){
+	lua_pushnil(L);
+	while (lua_next(L, idx) != 0) { 
+		printf("%s - %s\n",
+			lua_isstring(L, -2) ? lua_tostring(L, -2) : lua_typename(L, lua_type(L, -2)),
+			lua_typename(L, lua_type(L, -1)));
+		lua_pop(L, 1);
+	}
 }
-
-
-#define LUA_DLL __declspec(dllexport)
-#define lua_L lua_State *L
 
 #define lua_cleanargs(L, num) {int top = lua_gettop(L); if (top > num) lua_pop(L, top-num);}
 
@@ -116,3 +114,5 @@ void stackDump(lua_L) {
 	printf("\n");
 	getchar();
 };
+
+#endif
