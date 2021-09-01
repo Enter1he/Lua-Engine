@@ -1,13 +1,26 @@
 # Lua-Engine
-Lua Engine written with Lua C API
 
-IUP 3.29, lua 5.3 required for compilation
+    LuaEngine is a simple 2D game engine written in C. 
+
+# Features
+
+    It's main feature is an extensive use of Lua programming language and it's features. For example every scene used by engine must be Lua module 
+
+# Documentation
+
+    LuaEngine uses object model for ease of use
+
+# Dependencies
+
+    IUP 3.29, 
+    lua 5.3,
+    FreeType,
+    dr_wav,
+    stb_vorbis,
+    OpenAL,
+    OpenGL
 
 
-Building advice 
+# Building advice 
 
-Use .bat files and don't forget to install gcc
-
-Windows only.
-
-Good luck!
+    makefile does everything for your
