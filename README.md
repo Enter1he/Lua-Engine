@@ -6,8 +6,9 @@ LuaEngine is a simple 2D game engine written in C.
 
 It's main feature is an extensive use of Lua programming language and it's features. 
 For example every scene used by engine must be Lua module. 
-It's also provides some basic features for 2d games like rendering and animating 
-images
+It's also provides some basic features for 2d games like: rendering and animating 
+images of PNG, JPEG, BMP and TIFF formats; playing WAV and OGG audio files; object model for speeding up development process.
+
 
 # Documentation
 
