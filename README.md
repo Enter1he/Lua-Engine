@@ -18,11 +18,11 @@ LuaEngine consists of main executable and numerous modules written in Lua C API 
 
 LuaEngine uses object model for ease of use.
 There are several classes that LuaEngine uses:
-  Sprite - drawable object, can be either Single image or animated SpriteSheet
-  Mob - movable object, implements number of common functionality for moving 2D objects
-  Layer - drawing object, stores drawables inside
-  Color - basic data type for color handling
-  Vector - simple class for vector math
+  * Sprite - drawable object, can be either Single image or animated SpriteSheet
+  * Mob - movable object, implements number of common functionality for moving 2D objects
+  * Layer - drawing object, stores drawables inside
+  * Color - basic data type for color handling
+  * Vector - simple class for vector math
 
 Class Mixing
   In Lua there is no object-oriented model. However, it's easy to implement it. One of the ways to implement objects in 
@@ -31,13 +31,13 @@ Class Mixing
 
 # Dependencies
 
-IUP 3.29, 
-lua 5.3,
-FreeType,
-dr_wav,
-stb_vorbis,
-OpenAL,
-OpenGL
+*IUP 3.29, 
+*lua 5.3,
+*FreeType,
+*dr_wav,
+*stb_vorbis,
+*OpenAL,
+*OpenGL
 
 
 # Building advice 
