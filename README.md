@@ -26,7 +26,7 @@ There are several classes that LuaEngine uses:
   * Color - basic data type for color handling
   * Vector - simple class for vector math
 
-Class Mixing
+## Class Mixing
   In Lua there is no object-oriented model. However, it's easy to implement it. One of the ways to implement objects in 
   Lua is to create a mixin-table that represents your object and consits of it's fields summed up with the values of it's
   parent object.
