@@ -35,6 +35,7 @@ There are several classes that LuaEngine uses:
 
 IUP 3.29, 
 lua 5.3,
+pthread,
 FreeType,
 dr_wav,
 stb_vorbis,
