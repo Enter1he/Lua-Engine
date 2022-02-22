@@ -1,6 +1,6 @@
 #include "luadef.h"
 #include "iupdef.h"
-#include "threads.h"
+#include "lthreads.h"
 
 #ifdef WIN32
   #include <windows.h>
