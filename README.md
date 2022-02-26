@@ -17,14 +17,19 @@ It's also provides some basic features for 2d games like:
 LuaEngine structure
 
 LuaEngine consists of main executable and numerous modules written in Lua C API and loaded during executable start
+There's the list of this modules:
+  * Graphics - module for drawing various drawable objects(mainly Text, Sprite) and primitives(mainly Square, Quad and Circle). Can change color of drawn objects if module's 'color' field changes.
+  * Audio - sound module for playing audio of types .ogg and .wav. Has capabilities for relative sound position.
+  * Collision - intersection module for checking figures collision. Supports intersection checks between circles, squares and points.
 
 LuaEngine uses object model for ease of use.
 There are several classes that LuaEngine uses:
-  * Sprite - drawable object, can be either Single image or animated SpriteSheet
-  * Mob - movable object, implements number of common functionality for moving 2D objects
-  * Layer - drawing object, stores drawables inside
-  * Color - basic data type for color handling
-  * Vector - simple class for vector math
+  * Sprite - drawable object, can be either Single image or animated SpriteSheet.
+  * Text - drawable object, consists of the font and it's size.
+  * Mob - movable object, implements number of common functionality for moving 2D objects.
+  * Layer - drawing object, stores drawables inside.
+  * Color - basic data type for color handling.
+  * Vector - simple class for vector math.
 
 ## Class Mixing
   In Lua there is no object-oriented model. However, it's easy to implement it. One of the ways to implement objects in 
