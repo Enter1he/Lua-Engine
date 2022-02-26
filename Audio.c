@@ -1,14 +1,4 @@
-#include "stb_vorbis.c"
-
-#define DR_WAV_IMPLEMENTATION
-#include "dr_wav.h"
-
-#include "luadef.h"
-#include <windows.h>
-
-#include <AL/al.h>
-#include <AL/alc.h>
-
+#include "Audio.h"
 
 
 
@@ -422,7 +412,7 @@ int S_newSound(lua_L){
 }
 
 
-int LUA_DLL luaopen_Audio(lua_L)
+LUA_DLL int luaopen_Audio(lua_L)
 {
     out = alcOpenDevice(NULL);
     cont = alcCreateContext(out, NULL);
@@ -433,6 +423,8 @@ int LUA_DLL luaopen_Audio(lua_L)
     
     alDistanceModel(AL_LINEAR_DISTANCE);
     luaL_newlib(L, Sound);
+    lua_nameAtable(L, -2, "Sound");
+    
     lua_setglobal(L, "Sound");
     lua_getglobal(L, "Sound");
 
@@ -440,6 +432,7 @@ int LUA_DLL luaopen_Audio(lua_L)
     lua_setfield(L, -2, "gc");
     
     luaL_newlib(L, func);  // Audio lib table
+    lua_nameAtable(L, -2, "Audio");
     lua_createtable(L, 1, 1);   
     luaL_setfuncs(L, meta, 0);  // Audio lib GC meta
     
@@ -462,7 +455,9 @@ int LUA_DLL luaopen_Audio(lua_L)
     lua_setfield(L, -2, "Update");
     
     lua_setfield(L, -2 , "Listener"); // Audio.Listener = Listener
-
+    
+    lua_rotate(L, -1, 2);
+    lua_setglobal(L, "Sound");
 
     return 1;
 }

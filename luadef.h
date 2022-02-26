@@ -20,9 +20,9 @@ LUALIB_API void (luaL_openlibs) (lua_State *L);
   }\
 }
 
-#define lua_getvalue(L, idx, name) if(!lua_getfield(L, idx, name)) (fprintf(stderr, "%s %s line %d: no %s defined in table\n", __func__, __FILE__ , __LINE__, name))
+#define lua_getvalue(L, idx, name) if(!lua_getfield(L, idx, name)) {fprintf(stderr, "%s %s line %d: no %s defined in table\n",  __FILE__ , __func__, __LINE__, name); getchar();}
 
-#define lua_getidx(L, idx, n) if(!lua_geti(L, idx, n)) (fprintf(stderr, "%s %s line %d: no %d defined in table\n", __func__, __FILE__ , __LINE__, n), getchar())
+#define lua_getidx(L, idx, n) if(!lua_geti(L, idx, n)) {fprintf(stderr, "%s %s line %d: no %d defined in table\n", __FILE__, __func__, __LINE__, n); getchar();}
 
 #define lua_nameAtable(L, idx, name){\
 	lua_pushstring(L, name);\
@@ -43,15 +43,7 @@ LUALIB_API void (luaL_openlibs) (lua_State *L);
   lua_call(L, 1, 0);\
 }
 
-void lua_tableContets(lua_L, int idx){
-	lua_pushnil(L);
-	while (lua_next(L, idx) != 0) { 
-		printf("%s - %s\n",
-			lua_isstring(L, -2) ? lua_tostring(L, -2) : lua_typename(L, lua_type(L, -2)),
-			lua_typename(L, lua_type(L, -1)));
-		lua_pop(L, 1);
-	}
-}
+void lua_tableContets(lua_L, int idx);
 
 #define lua_cleanargs(L, num) {int top = lua_gettop(L); if (top > num) lua_pop(L, top-num);}
 
@@ -75,44 +67,6 @@ void lua_tableContets(lua_L, int idx){
 	lua_getidx(L, -2, 2);\
 }
 
-void stackDump(lua_L) {
-	int i;
-	int top = lua_gettop(L);
-	for(i = 1; i <= top; i++) {
-		int t = lua_type(L, i);
-		printf("%d:", -(top-i)-1);
-		switch(t) {
-			case LUA_TNIL:
-				printf("nil");
-				break;
-			case LUA_TBOOLEAN:
-				printf(lua_toboolean(L, i) ? "true" : "false");
-				break;
-			case LUA_TNUMBER:
-				printf("%g", lua_tonumber(L, i));
-				break;
-			case LUA_TSTRING:
-				printf("%s", lua_tostring(L, i));
-				break;
-			case LUA_TFUNCTION:
-				printf("%s", lua_typename(L, t));
-				break;
-			case LUA_TTABLE: {
-				lua_getfield(L, i, "name");
-				const char* q = lua_tolstring(L, top+1, NULL);
-				lua_pop(L, 1);
-				printf("%s", q ? q : "table");
-				break;
-			}
-			default:{
-				printf("%s", lua_typename(L, t));
-				break;
-			}
-		}
-		printf(" ");
-	}
-	printf("\n");
-	getchar();
-};
+void stackDump(lua_L);
 
 #endif

@@ -1,7 +1,4 @@
-#include"include/lua.h"
-#include"include/lualib.h"
-#include"include/lauxlib.h"
-
+#include "Collision.h"
 
 
 int CC_Collide(lua_State *L){
@@ -81,9 +78,8 @@ static const struct luaL_Reg funcs[] = {
     {NULL, NULL}
 };
 
-int __declspec(dllexport) luaopen_Collision(lua_State* L){
-    luaL_newlibtable(L, funcs);
-    luaL_setfuncs(L, funcs, 0);
-    
+LUA_DLL int luaopen_Collision(lua_State* L){
+    luaL_newlib(L, funcs);
+    lua_nameAtable(L, -2, "Collision");
     return 1;
 };
