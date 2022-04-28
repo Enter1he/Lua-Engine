@@ -552,7 +552,6 @@ int EngineBoot(int *argc, char ***argv)
     IupLoopStep();
   };
   
-  lua_close(l);
   IupDestroy(dg);
   IupClose();
   
