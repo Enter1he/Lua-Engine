@@ -142,6 +142,8 @@ B = {
     caps = 0xFFE5;
 }
 
+
+
 local function ForCommands(key)
     
     if Commands[key] then
@@ -161,3 +163,10 @@ Controls = {
     Command = ForCommands;
     AddCommand = AddCommand;
 }
+
+new(B, {
+    __newindex = function (a, k)
+        error("can't change button codes!!")
+    end
+})
+

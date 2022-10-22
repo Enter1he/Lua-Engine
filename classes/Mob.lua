@@ -1,11 +1,9 @@
-local dt = _en.dt
 
-local over = Lalloc(1)
-
+local dt = 1/64
 local Mob = {
     pos = {0,0};
     vel = {0,0};
-    [over] = true;
+    over = true;
     to = 1;
     speed = 1;
     sight = 1;
@@ -15,7 +13,9 @@ function Mob.newMob(new, x, y, speed)
     local x, y, speed = x or 0, y or 0, speed or 10
     new = new or {}
     local _ENV = new
-    pos = pos or {0, 0, 0}; pos[1] = x; pos[2] = y;
+    pos = pos or {0, 0, 0}; 
+    pos[1] = x; pos[2] = y
+    
     vel = vel or {0,0,0}
     over = true
     to = 1
@@ -33,7 +33,6 @@ end
 
 function Mob:Stop()
     self.vel[1] = 0; self.vel[2] = 0;
-    self[over] = true
 end
 
 function Mob:Liberate()
@@ -57,18 +56,17 @@ function Mob:Vel_Move()
         vel[1] = hlfv*vel[1]; vel[2] = hlfv*vel[2]
     end
     
-    pos[1] = pos[1] + int(vel[1] * sdt)
-    pos[2] = pos[2] + int(vel[2] * sdt)
+    pos[1] = pos[1] + vel[1] * sdt
+    pos[2] = pos[2] + vel[2] * sdt
     
 end
 
 local atan = math.atan
 local sin, cos = math.sin, math.cos
-local dx, dy = Lalloc(1), Lalloc(1)
 
 function Mob:MoveTo( x, y)
-    if self[over] == false then
-        x, y = self[dx], self[dy]
+    if self.over == false then
+        
         local pos, vel = self.pos, self.vel
         local ox, oy = pos[1], pos[2]
 
@@ -87,20 +85,20 @@ function Mob:MoveTo( x, y)
         
         pos[1] = c1 and x or ox
         pos[2] = c2 and y or oy
-        self[over] = c1 and c2
+        self.over = c1 and c2
         
         
         return true
     end
-    if self[over] == true then
-        self[dx], self[dy] = x, y
-        self[over] = false
-        return self[over]
+    if self.over == true then
+        
+        self.over = false
+        return self.over
     end
 end
-local offset = 1
+local offset = 5
 function Mob:RMoveTo(from, to)
-    if self[over] == false then
+    if self.over == false then
         
         local pos, vel = self.pos, self.vel
         local ox, oy = pos[1], pos[2]
@@ -113,9 +111,9 @@ function Mob:RMoveTo(from, to)
         
         vel[1], vel[2] = 0, 0
 
-
-        if oy > y then vel[2] = -1;
-        elseif oy < y then vel[2] = 1;  end
+        local offx, offy = offset, offset
+        if oy > y then vel[2] = -1; 
+        elseif oy < y then vel[2] = 1; end
 
         if ox > x then vel[1] = -1;
         elseif ox < x then vel[1] = 1; end
@@ -123,15 +121,14 @@ function Mob:RMoveTo(from, to)
         self:Vel_Move()
 
         ox, oy = pos[1], pos[2]
-        local c1 = (ox >= x - offset and ox <= x + offset)
-        local c2 = (oy >= y - offset and oy <= y + offset)
+        local c1 = (ox > x - offx and ox < x + offx)
+        local c2 = (oy > y - offy and oy < y + offy)
         
         
-
         pos[1] = c1 and x or ox
         pos[2] = c2 and y or oy
-        self[over] = c1 and c2
-        if self[over] then
+        self.over = c1 and c2
+        if self.over then
             self.rx = false
             self.ry = false
         end
@@ -140,11 +137,11 @@ function Mob:RMoveTo(from, to)
     else 
         self.rx = math.random(from[1], from[2])
         self.ry = math.random(to[1], to[2])
-        self[over] = false
-        return self[over]
+        self.over = false
+        return self.over
     end
 end
-local ptime = Lalloc(1)
+local ptime = LE.Lalloc(1)
 function Mob:GetTo(x,y, time)
     time = time or 1
     local atime = self[ptime] or time

@@ -1,6 +1,6 @@
 local Mob = Mob
 local sqrt, atan2, deg = math.sqrt, math.atan2, math.deg
-local StoXY = StoXY
+
 
 local sW, sH, aH = _en.screen.w, _en.screen.h
 
@@ -9,25 +9,26 @@ local player = {
     pos = {100,50};
     origin = {0.5, -0.5};
     size = {100,100};
-    
+    vel = {0,0,0};
     speed = 100;
-    walk = false;
+    
 };
-Mob.newPlayer(player)
+Mob.newMob(player)
 Sprite.newSheet(player)
 
 local text = new(
-{
+{   
+    value = "angle";
     pos = {60, 50};
     size = 20;
-    font = "Teletactile-3zavL.ttf";
+    font = "Scenes/TDS/res/Teletactile-3zavL.ttf";
     Draw = Graphics.DrawText;
     Load = Graphics.LoadText;
 }, Text)
 
 
 
-Controls.AddCommand(65307, os.exit)
+Controls.AddCommand(65307, Close)
 
 
 
@@ -40,8 +41,6 @@ local TDS = NewScene{
 local l = Layer.new{}
 
 function TDS:Load()
-    
-    
     
     text:Load()
     --flower:Load("Scenes/TDS/res/Flower/Flower.png")
@@ -60,7 +59,7 @@ function TDS:Update()
     
     end
     
-    player.walk = false
+    
 end
 
 function TDS:Draw()

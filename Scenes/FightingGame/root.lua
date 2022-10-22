@@ -24,7 +24,7 @@ local Bprior = {
     "dwn", "upn", "rgt", "lft"
 }
 
-Controls.AddCommand(B.esc, Close)
+Controls.AddCommand(B.esc, LE.Close)
 local left = string.char(27)
 local right = string.char(26)
 local up = string.char(24)

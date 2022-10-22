@@ -1,6 +1,6 @@
 local screen = _en.screen
-
-local order, list = Lalloc(1), Lalloc(1)
+print(LE.Lalloc)
+local order, list = LE.Lalloc(1), LE.Lalloc(1)
 
 
 local Layer = {
@@ -67,7 +67,7 @@ function Layer.new(new)
 
     pos = pos or {0,0}
     size = size or {1,1}
-    blend = blend or 0
+    blend = blend or 1
     new[list] = new[list] or {}
     Draw = Layer.Draw
     CenterAt = Layer.CenterAt

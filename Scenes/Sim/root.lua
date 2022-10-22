@@ -1,29 +1,44 @@
-local path = ".Scenes.Sim."
+print"Sim.root Start"
+local Collide = Collision
 
 
-local Collide = require"Collision"
+-- for i = 1, 100000000 do
+    
+-- end
+local  screen = _en.screen
+
+local flowers = 1; local flocount = flowers;
+local humans = 10
+local zombies = 1 -- numbers of objects
+local npc = {} 
+local objs = {}  -- individual obj and npc tables
+local flosprite = {}
+local humarite = {} 
+local zombarite = {}
+local music = Sound.new{
+        pos = {0,0,0};
+        pitch =3;
+        max_distance = 30;
+        rolloff = 0;
+    }; -- sprites and music files
 
 
-local dt, screen =_en.dt, _en.screen
+local Listener = Audio.Listener
 
-local   flowers, humans, zombies, -- numbers of objects
-        npc, objs,  -- individual obj and npc tables
-        flosprite, humarite, zombarite, music; -- sprites and music files
-
-
-local Listener= Audio.Listener
-
-local text = new(
+local text = Text.newText(
     { 
-        value = "fr\nam\ne:";
+        value = "frame:";
         pos = {10, 50};
-        font = nil;
+        -- font = "Teletactile-3zavL.ttf";
         size = 14;
-        color = {1,1,1,1}
-    }, Text
+        color = {1,1,1,1};
+        alpha = 1;
+        
+    }
 )
 
-
+local interface = Layer.new{}
+interface:AddDrawable(text)
 
 local Sim = NewScene{
     
@@ -31,70 +46,145 @@ local Sim = NewScene{
 
 }
 
-Controls.AddCommand(B.esc, Close)
-
-Controls.AddCommand(B.z, ResumeLoading)
+Controls.AddCommand(B.esc, LE.Close)
 
 
-local green = {0,1,0,1} + Color{1,0,0,1}
+
+local green = {0,1,0,1}
 local blue = {0,0,1,1}
 local red = {1,0,0,1}
 
 
-local main = Layer.new()
+local main = Layer.new{blend = 0}
 
 
+local Human = require ("Scenes/Sim/classes/Human")
+local Zombie = require ("Scenes/Sim/classes/Zombie")
 
-local Human = require (path.."classes.Human")
-local Zombie = require (path.."classes.Zombie")
+Controls.AddCommand(B.z, 
+function()
+    if #npc > humans then
+        if zombies > 0 then
+
+            for i = humans+1, #npc do
+                local a = npc[i]
+                local n = npc.length + i
+                local x, y = math.random(50,screen.w-50), math.random(0,screen.h-60)
+                a.pos, a.score = {x, y}, 5
+                zombarite:CopySprite(a)
+                a.Act = Zombie.Act
+                a.frame = 1
+                a.anim = 1
+                
+            end
+
+        end
+        return;
+    end
+    LE.ResumeLoading()
+end)
+local Net = require"Scenes.Sim.classes.Neuronet"
+Controls.AddCommand(B[1], function ()
+    print(npc[1].vel[1],npc[1].vel[2])
+    Net.Print(npc[1].brain)
+end)
+
+Controls.AddCommand(B.r, 
+    function()
+        if flowers > 0  then
+            for i = 1, flowers do
+                local x, y = math.random(50,screen.w-50), math.random(50,screen.h-50)
+                local a = objs[i]
+                flosprite:CopySprite(a)
+                a.pos = {x, y};
+                
+            end
+
+        end
+        if humans > 0 then
+
+            for i = 1, humans do
+                local a = npc[i]
+                local x, y = math.random(50,screen.w-50), math.random(60,screen.h-60) --math.random(dx[1],dx[2]), math.random(dy[1],dy[2])
+                a.Act = Human.Act
+                a.pos, a.score = {x, y}, 0
+                humarite:CopySprite(a)
+                
+            end
+        end
+        if zombies > 0 then 
+            for i = humans+1, #npc do
+                local a = npc[i]
+                a.Draw = nil
+            end
+        end
+    end
+)
+
 
 local function Npc_Controls(npc) -- adjusting directions for moving mobs
     if npc.vel[2] > 0 then
-        npc.dir = 1
+        npc.dir = 1 -- down
     end
     if npc.vel[1] > 0 then
-        npc.dir = 2
+        npc.dir = 2 -- right
     end
     if npc.vel[2] < 0 then
-        npc.dir = 3
+        npc.dir = 3 -- up
     end
     if npc.vel[1] < 0 then
-        npc.dir = 4
+        npc.dir = 4 -- left
     end
-    
+    if npc.vel[1] ~= 0 or npc.vel[2] ~= 0 then
+        npc:PlayAnim(npc.dir, true, 20, 4)
+    end
 end
 
 
-local int = int
+local int = LE.int
 local DrawSprite = Graphics.DrawSprite
 local DrawSpriteSheet = Graphics.DrawSpriteSheet
 local DrawCircle = Graphics.DrawCircle
-
-local function drawobj(self)
-    local ax, ay = self.pos[1] + self.size[1], self.pos[2]
-    DrawCircle(2, ax, ay, 5)
-    -- Graphics.DrawRect(false, ax, ay, self.size[1], self.size[2])
-    DrawSprite(self)
-    
+local osize = {}
+local function drawobj(a)
+    local ax, ay = a.pos[1] + flosprite.scale[1], a.pos[2]
+    DrawCircle(false, ax, ay, 18)
+    DrawSprite(a)
 end
-local function drawnpc(self)
-    local ax, ay = self.pos[1] + self.size[1]+10, self.pos[2] + self.size[2]*self.origin[2]
-    
-    DrawSpriteSheet(self)
-    DrawCircle(false, ax, ay, 10,35)
+
+local function drawnpc(a)
+    local ax, ay = 0, 0
+    if a.dir == 1 then -- down
+        ax, ay = a.pos[1] + humarite.w , a.pos[2] + 0.7*humarite.h
+    elseif a.dir == 2 then -- right
+        ax, ay = a.pos[1] + humarite.w*1.5 , a.pos[2] + 0.5*humarite.h
+    elseif a.dir == 3 then -- up
+        ax, ay = a.pos[1] + humarite.w , a.pos[2] + 0.2*humarite.h
+    elseif a.dir == 4 then -- left
+        ax, ay = a.pos[1] + 0.5*humarite.w , a.pos[2] + 0.5*humarite.h
+    end
+    DrawSpriteSheet(a)
+    DrawCircle(false, ax, ay, 12)
 end 
 
-
-function AoS()
-    
+local function drawenemy(a)
+    local ax, ay = 0, 0
+    if a.dir == 1 then -- down
+        ax, ay = a.pos[1] + humarite.w , a.pos[2]
+    elseif a.dir == 2 then -- right
+        ax, ay = a.pos[1] + humarite.w*1.5 , a.pos[2] - 0.3*humarite.h
+    elseif a.dir == 3 then -- up
+        ax, ay = a.pos[1] + humarite.w , a.pos[2] - 0.3*humarite.h
+    elseif a.dir == 4 then -- left
+        ax, ay = a.pos[1] + 0.5*humarite.w , a.pos[2] - 0.3*humarite.h
+    end
+    DrawSpriteSheet(a)
+    DrawCircle(false, ax, ay, 12)
 end
-
-
 
 function Sim.Load(Sim)
     
-    npc = {}
-    objs = {}
+    print"Load Start"
     player = new(
         {
             speed = 150;
@@ -103,29 +193,36 @@ function Sim.Load(Sim)
             vel = {0,0}
         }, Mob)
     
-    text:Load()
+    text:Load(true)
     
     -- gen nums of flowers, humans, zombies
     math.randomseed(os.time()) --initialize randomness
-    flowers = 100
-    humans = 20
-    zombies = 0
-
-    ----------------------------------------------ADDING TEXTURES----------------------------------------------------------------
-    flosprite, humarite, zombarite = {}, {size = {32,55}; }, {size = {32,55};}
-    Sprite.newSimple(flosprite)
-    flosprite:Load("Scenes/Sim/res/Plants/Flower.png")
-    flosprite.color = green
+    
         
+    ----------------------------------------------ADDING TEXTURES----------------------------------------------------------------
+    flosprite, humarite, zombarite = {}, {}, {}
+    Sprite.newSimple(flosprite)
+    flosprite:Load("Scenes/Sim/res/Plants/Flower.png",true)
+    flosprite.color = green
+    flosprite.scale = Graphics.GetSize(flosprite)
+    flosprite.Draw = drawobj
+    
+
     Sprite.newSheet(humarite)
-    humarite:Load("Scenes/Sim/res/Human/Human", 0)
+    humarite:Load("Scenes/Sim/res/Human/Human", false)
     humarite.color = blue
+    humarite.w, humarite.h = humarite.src.w, humarite.src.h
+    humarite.Draw = drawnpc
+
 
     Sprite.newSheet(zombarite)
-    zombarite:Load("Scenes/Sim/res/Zomb/Zombie", 0)
+    zombarite:Load("Scenes/Sim/res/Zomb/Zombie", false)
     zombarite.color = red
+    zombarite.w, zombarite.h = zombarite.src.w, zombarite.src.h
+    zombarite.Draw = drawenemy
     
 --------------------------------------------------CREATING MOBS-------------------------------------------------------------------
+    
     npc.length = 0
     if flowers > 0 then
         for i = 1, flowers do
@@ -133,18 +230,16 @@ function Sim.Load(Sim)
             local x, y = math.random(50,screen.w-50), math.random(50,screen.h-50)
             local a = {
                 __name = "flower";
-                
             }
             Sprite.newSimple(a)
             flosprite:CopySprite(a)
             a.pos = {x, y};
-            
             objs[i] = a
             
             main:AddDrawable(a)
             
         end
-
+        print"flowers"
     end
     if humans > 0 then
 
@@ -159,16 +254,10 @@ function Sim.Load(Sim)
         npc.length = npc.length + humans
     end
 
-    main:AddDrawable(text)
-    music = Sound.new{
-        pos = {0,0,0};
-        pitch =1;
-        max_distance = 30;
-        rolloff = 1;
-    }
     
-    Audio.LoadSound(music,"Test.ogg")
+    Audio.LoadSound(music,"Scenes/Sim/res/Test.ogg")
     Listener.pos = player.pos
+    print"Load End"
     
     coroutine.yield()
 
@@ -177,23 +266,16 @@ function Sim.Load(Sim)
         for i = 1, zombies do
             local n = npc.length + i
             local x, y = math.random(50,screen.w-50), math.random(0,screen.h-60)
-            local a = {
-                __name = 'zombie';
-
-            }
-            Sprite.newSheet(a)
+            local a = Zombie.new(x, y)
             zombarite:CopySprite(a)
-            Mob.newMob(a, x, y, 50)
 
-            a.dir = 1
-            a.score = 5
             npc[n] = a
             main:AddDrawable(a)
         end
         npc.length = npc.length + zombies
     end
 
-
+    
 end
 
 function Sim:Delete()
@@ -202,16 +284,16 @@ function Sim:Delete()
 end
 
 local Npc_Update;
-
+local fmt = string.format
 function Sim:Update()
     -- print"Update"
-    text.value = string.format('flowers: %s \n fps: %s', flowers,  tostring(fps))
+    
     if not paused then
 
         Npc_Update()
         
     end
-    
+    text.value = "fps:\n"..tostring(fps)
 end
 
 
@@ -225,82 +307,94 @@ function Zombie.Act(a)
         a:PlayAnim(5, false, 15, 5)
         return;
     end
-    local ax, ay = a.pos[1] + a.origin[1]*a.size[1] , a.pos[2] - a.origin[2]*a.size[2]
-    for j = 1, npc.length do
+    local ax, ay;
+    if a.dir == 1 then -- down
+        ax, ay = a.pos[1] + a.origin[1]*a.size[1] , a.pos[2] + a.origin[2]*a.size[2]
+    elseif a.dir == 2 then -- right
+        ax, ay = a.pos[1] + a.size[1] , a.pos[2]
+    elseif a.dir == 3 then -- up
+        ax, ay = a.pos[1] + a.origin[1]*a.size[1] , a.pos[2] - 0.5*a.size[2]
+    elseif a.dir == 4 then -- left
+        ax, ay = a.pos[1] - a.size[1] , a.pos[2] - a.origin[2]*a.size[2]
+    end
+    for j = 1, #npc do
         b = npc[j]
-        if humarite.isSprite(b) then
-
+        if b.Act == Human.Act then
             local bx, by = b.pos[1] , b.pos[2] - b.origin[2]*b.size[2]
             if CtC(ax, ay, 20, bx, by, 12) then
                 zombarite:CopySprite(b)
-
-                b.__name = 'zombie'
-                b.speed = a.speed
-                b.score = 0
-                a.score = a.score - 1
-                humans = humans - 1
+                Zombie.infect(b)
+                a.score = a.score - 1 
                 break
             end
         end
     end
-    a:PlayAnim(a.dir, true, 15, 5)
-    a:RMoveTo( dx, dy)
-end
-
-function Human.Act(a)
-    local b;
-    local ax, ay = a.pos[1] + a.size[1] + 10, a.pos[2] + a.size[2]*a.origin[2]
-    if a.over then
-        a.found = nil
-    end
-    for j = 1, flowers do
-        b = objs[j]
-
-        if b.visible then
-            local bx, by = b.pos[1] + b.size[1], b.pos[2]
-            
-            if CtC(ax, ay , 25, bx, by, 10) then
-                local n = #objs
-                a.over = true
-                a.found = nil
-                b.visible = nil
-                objs[j], objs[n] = objs[n], objs[j]
-                objs[n] = nil
-                a.score = a.score + 1
-                main:RemoveDrawable(b)
-                flowers = flowers - 1
-                break
-            end
-            if CtC(ax, ay, a.sight, bx, by, 25) and not a.found then
-                a.rx, a.ry = b.pos[1]+25, b.pos[2] - 28 
-                a.found = true
-            end
-            
-        end
-    end
-    a:PlayAnim(a.dir, true, 10, 4)
-    a:RMoveTo( dx, dy)
     
+    a:RMoveTo( dx, dy)
 end
+
+-- function Human.Act(a)
+--     local b;
+--     local ax, ay = a.pos[1] + a.size[1] + 10, a.pos[2] + a.size[2]*a.origin[2]
+--     if a.over then
+--         a.found = nil
+--     end
+--     for j = 1, flowers do
+--         b = objs[j]
+--         if b.Draw then
+--             local bx, by = b.pos[1] + flosprite.scale[1], b.pos[2]
+--             if a.dir == 1 then -- down
+--                 ax, ay = a.pos[1] + humarite.w , a.pos[2] + 0.7*humarite.h
+--             elseif a.dir == 2 then -- right
+--                 ax, ay = a.pos[1] + humarite.w*1.5 , a.pos[2] + 0.5*humarite.h
+--             elseif a.dir == 3 then -- up
+--                 ax, ay = a.pos[1] + humarite.w , a.pos[2] + 0.2*humarite.h
+--             elseif a.dir == 4 then -- left
+--                 ax, ay = a.pos[1] + 0.5*humarite.w , a.pos[2] + 0.5*humarite.h
+--             end
+--             if CtC(ax, ay , 25, bx, by, 18) then
+--                 local n = #objs
+--                 a.over = true
+--                 a.found = nil
+--                 a.score = a.score + 1
+--                 b.Draw = nil
+--                 flocount = flocount - 1
+--                 break
+--             end
+--             if CtC(ax, ay, a.sight, bx, by, 25) and not a.found then
+--                 a.rx, a.ry = b.pos[1], b.pos[2]
+--                 a.found = b
+--             end
+            
+--         end
+        
+--     end
+--     for i = humans+1, #npc do
+--         b = npc[i]
+--         local bx, by = b.pos[1] + zombarite.scale[1], b.pos[2]
+--         if CtC(ax, ay, a.sight, bx, by, 25) then
+--             local x, y = ax-bx, ay-by
+--             a.rx, a.ry = ax-x, ay-y
+--             a.found = nil
+--         end
+--     end
+--     a:PlayAnim(a.dir, true, 10, 4)
+--     a:RMoveTo( dx, dy)
+--     -- text.value = fmt('flowers: %s\n fps: %s dt: %s\n %s %f %f', flocount, tostring(fps), tostring(dt), tostring(a), a.pos[1], a.pos[2])
+-- end
 
 function Npc_Update()
-    local len = npc.length
+    local len = #npc
     local a;
     
     for i = 1, len do
-
         a = npc[i]
-
-        Npc_Controls(a)
-        a:Act()
-        
+        if a.Draw then 
+            Npc_Controls(a)
+            a:Act(objs)
+        end
     end
 end
-
-
-
-
-
 
 function Sim:KeyPress(key, down)
     player:Stop()
@@ -317,28 +411,31 @@ function Sim:KeyPress(key, down)
         player.vel[1] = 1
     end
     if key[B.m] then
-        
-        music:Play()
+        LE.ChangeScene(2)
     end
     if player:isMoving() then
         player:Vel_Move()
         main.pos[1] = int(player.pos[1])
         main.pos[2] = int(player.pos[2])
+        interface.pos[1] = int(player.pos[1])
+        interface.pos[2] = int(player.pos[2])
+
         Listener:Update()
     end
 end
-
-
-
-
+local line = {120,45, 34,56, 300, 230}
+Graphics.SetColor(red[1], red[2], red[3], red[4])
 function Sim:Draw()
     
-    Graphics.color = red
-    main:Draw()
     
-    Graphics.DrawRect(false, 300, 300, 400, 400)
+    main:Draw()
+    interface:Draw()
+    -- Graphics.DrawLines(line)
+    Graphics.DrawLine( 300, 300, 200,200)
+    Graphics.DrawCircle(false, 20 , 20, 12)
 end
 
 
+print"Sim.root End"
 
 return Sim

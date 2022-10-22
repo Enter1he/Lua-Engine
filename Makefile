@@ -1,37 +1,72 @@
-all:LuaEngine.exe
+BIT = -m64
+LIB = ./lib64/
+BUILD = ./Win64/
+
+ifeq ($(win32), 1)
+	BIT = -m32
+	LIB = ./lib32/
+	BUILD = ./Win32/
+endif
+
+all: $(BUILD)LuaEngine.exe $(BUILD)modules $(BUILD)modules/% $(BUILD)classes $(BUILD)classes/% $(BUILD)Scenes $(BUILD)Scenes/%
 
 cleanGraph:
-	del Graphics.dll && del Graphics.o
+	del $(BUILD)Graphics.dll && del $(BUILD)Graphics.o
 
 cleanAudio:
-	del Audio.o && del Audio.dll
+	del $(BUILD)Audio.o && del $(BUILD)Audio.dll
 
 cleanExe:
-	del LuaEngine.exe
+	del $(BUILD)LuaEngine.exe
 
 cleanCollision:
-	del Collision.o && del Collision.dll
+	del $(BUILD)Collision.o && del $(BUILD)Collision.dll 
 
 cleanAll:
-	del LuaEngine.exe && del Graphics.dll && del Graphics.o && del Audio.o && del Audio.dll && del Collision.o && del Collision.dll 
+	del $(BUILD)LuaEngine.exe && del $(BUILD)Graphics.dll && del $(BUILD)Graphics.o && del $(BUILD)Audio.o && del $(BUILD)Audio.dll && del $(BUILD)Collision.o && del $(BUILD)Collision.dll 
 
-LuaEngine.exe: Graphics.dll Audio.dll Collision.dll
-	gcc -I. -L. Core.c -o LuaEngine.exe  -llua53 -liup -liupgl -lopengl32 
 
-Graphics.dll: Graphics.o
-	gcc -O2 -shared -o Graphics.dll Graphics.o -I. -L. -llua53 -lim -lopengl32 -lfreetype
+$(BUILD)classes:
+	mkdir "$(BUILD)classes"
 
-Audio.dll: Audio.o
-	gcc -O2 -shared -o Audio.dll Audio.o dr_wav.c stb_vorbis.c -I. -L. -llua53 -lopenal32
+$(BUILD)classes/%:
+	xcopy /e /y "./classes" "$(BUILD)classes"
+	
+$(BUILD)modules:
+	mkdir "$(BUILD)modules/%"
 
-Collision.dll: Collision.o
-	gcc -O2 -shared -o Collision.dll Collision.o -I. -L. -llua53
+$(BUILD)modules/%:
+	xcopy /e /y "./modules" "$(BUILD)modules"
+	
+$(BUILD)Scenes:
+	mkdir "$(BUILD)Scenes"
 
-Graphics.o: Graphics.c
-	gcc -O2 -c -o Graphics.o Graphics.c
+$(BUILD)Scenes/%:
+	xcopy /e /y "./Scenes" "$(BUILD)Scenes"
+	
 
-Audio.o: Audio.c
-	gcc -O2 -c -o Audio.o Audio.c 
 
-Collision.o: Collision.c
-	gcc -O2 -c Collision.c  -o Collision.o
+$(BUILD)LuaEngine.exe: src/Core.c $(BUILD)Graphics.dll $(BUILD)Audio.dll $(BUILD)Collision.dll
+	gcc $(BIT) -I. -L$(LIB) src/Core.c -o $(BUILD)LuaEngine.exe -llua54 -liup -liupgl -lopengl32
+
+Opt: $(BUILD)Graphics.dll $(BUILD)Audio.dll $(BUILD)Collision.dll
+	gcc $(BIT) -O3 -I. -L$(LIB) src/Core.c -o $(BUILD)LuaEngineOpt.exe -llua54 -liup -liupgl -lopengl32
+
+$(BUILD)Graphics.dll: $(BUILD)Graphics.o
+	gcc $(BIT) -O2 -shared -o $(BUILD)Graphics.dll $(BUILD)Graphics.o -I. -L$(LIB) -lopengl32 -lglew32 -lfreetype  -llua54 -lim -lim_process
+
+$(BUILD)Audio.dll: $(BUILD)Audio.o
+	gcc $(BIT) -O2 -shared -o $(BUILD)Audio.dll $(BUILD)Audio.o src/dr_wav.c src/stb_vorbis.c -I. -L$(LIB) -llua54 -lopenal32
+
+$(BUILD)Collision.dll: $(BUILD)Collision.o
+	gcc $(BIT) -O2 -shared -o $(BUILD)Collision.dll $(BUILD)Collision.o -I. -L$(LIB) -llua54
+
+$(BUILD)Graphics.o: src/Graphics.c
+	gcc $(BIT) -O2 -c -o $(BUILD)Graphics.o src/Graphics.c
+
+$(BUILD)Audio.o: src/Audio.c
+	gcc $(BIT) -O2 -c -o $(BUILD)Audio.o src/Audio.c 
+
+$(BUILD)Collision.o: src/Collision.c
+	gcc $(BIT) -O2 -c Collision.c  -o $(BUILD)Collision.o
+

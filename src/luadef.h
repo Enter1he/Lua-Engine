@@ -3,6 +3,8 @@
 
 #include "include/lua.h"
 #include "include/lauxlib.h"
+#include <stdlib.h>
+#include <stdio.h>
 
 LUALIB_API void (luaL_openlibs) (lua_State *L);
 
@@ -20,9 +22,11 @@ LUALIB_API void (luaL_openlibs) (lua_State *L);
   }\
 }
 
-#define lua_getvalue(L, idx, name) if(!lua_getfield(L, idx, name)) {fprintf(stderr, "%s %s line %d: no %s defined in table\n",  __FILE__ , __func__, __LINE__, name); getchar();}
+#define Error_print(str,...) {printf(str,##__VA_ARGS__); printf("\n"); system("pause");}
 
-#define lua_getidx(L, idx, n) if(!lua_geti(L, idx, n)) {fprintf(stderr, "%s %s line %d: no %d defined in table\n", __FILE__, __func__, __LINE__, n); getchar();}
+#define lua_getvalue(L, idx, name) if(!lua_getfield(L, idx, name)) {Error_print("%s %s line %d: no %s defined in table\n",  __FILE__ , __func__, __LINE__, name); }
+
+#define lua_getidx(L, idx, n) if(!lua_geti(L, idx, n)) {Error_print("%s %s line %d: no %d defined in table\n", __FILE__, __func__, __LINE__, n); }
 
 #define lua_nameAtable(L, idx, name){\
 	lua_pushstring(L, name);\
@@ -47,7 +51,7 @@ void lua_tableContets(lua_L, int idx);
 
 #define lua_cleanargs(L, num) {int top = lua_gettop(L); if (top > num) lua_pop(L, top-num);}
 
-#define Error_print(str,...) printf(str,##__VA_ARGS__); printf("\n"); getchar();
+
 
 #define lua_getA3(L){\
 	lua_getidx(L, -1, 1);\

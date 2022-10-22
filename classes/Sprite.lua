@@ -13,8 +13,9 @@ local Sprite = {
 
 
 
-
+local r1 = 1/60
 function Sprite:PlayAnim( anim, loop, rate, len)
+    rate = ((rate*r1)*fps)//1
     local r = self.rate
     if anim > #self.src.anim then 
         return error("No such animation")
@@ -77,7 +78,7 @@ function Sprite.newSheet(new)
 end
 
 function Sprite:CopySprite(copy)
-    copy._sprite = self._sprite
+    copy._drawable = self._drawable
     copy.size = self.size
     copy.origin = self.origin
     copy.color = self.color
@@ -90,9 +91,9 @@ end
 function Sprite:isSprite(spr)
     local t = type(spr)
     if t == 'userdata' then
-        return self._sprite == spr;
+        return self._drawable == spr;
     elseif t == 'table' then
-        return self._sprite == spr._sprite;
+        return self._drawable == spr._drawable;
     end
 
     return nil

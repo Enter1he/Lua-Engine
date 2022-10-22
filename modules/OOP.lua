@@ -82,7 +82,7 @@ local function Gnum(...)
     end
 end
 
-local OOP = {
+OOP = {
     class = class;
     makeCallable = constructor;
     inherit = ShallowCopy;
@@ -91,5 +91,3 @@ local OOP = {
     enum = enum;
     Gnum = Gnum;
 }
-
-return OOP

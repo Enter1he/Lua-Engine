@@ -47,16 +47,14 @@ Vector = {
     function(t)
         local res = ""
         for i = 1, #t do
-            local t = t[i]
-            if t then
-                res = res..t.." "
+            if t[i] then
+                res = res..t[i].." "
             else
                 break
             end
         end
         return res
     end;
-    
 }
 
 

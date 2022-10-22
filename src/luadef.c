@@ -48,5 +48,5 @@ void stackDump(lua_L) {
 		printf(" ");
 	}
 	printf("\n");
-	getchar();
+	
 };

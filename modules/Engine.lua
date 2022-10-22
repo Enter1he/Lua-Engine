@@ -1,19 +1,55 @@
-package.cpath = "./lib/?.dll;./lib/?53.dll;"..package.cpath
-package.loaded.name = "loaded"
+-- package.cpath = "./lib/?.dll;./lib/?53.dll;"..package.cpath
+-- package.loaded.name = "loaded"
 ---------------------------------       ENGINE_PART        ----------------------------------
-
-OOP = require"modules.OOP"
-Util = require"modules.Util"
+require"modules/OOP"
 
 EmptyFunc = function() end
 
-require"modules.Controls"
+require"modules/Controls"
 
+-- if developer then
+--     local tl = require"tl"
+--     local env = tl.init_env(nil, nil, nil, {[1] = "config"})
+--     local function checkT(T)
+--         print(tostring(T).." check")
+--         for k,v in pairs(T) do
+--             print(k,v)
+--         end
+--         print()
+--     end
+--     print(SceneEnum[startscene]..".root.lua")
+--     local name = SceneEnum[startscene].."/root.lua"
+--     local result = tl.process_string([[
+--         global Layer = require"classes/Layer"
+--         global Text = require"classes/Text"
+--         global Sprite = require"classes/Sprite"
+--         global Mob = require"classes/Mob"
+--         global Vector = require"classes/Vector"
+--         global Color = require"classes/Color"
+--     ]], env)
+--     checkT(result)
+--     local dependencies = result.dependencies
+--     checkT(dependencies)
+--     if #dependencies > 0 then
+--         print(name .. ":" .. dependencies[1].y .. ":" .. dependencies[1].x .. ": " .. dependencies[1].msg)
+--     end
+--     local warnings = result.warnings
+--     if #warnings > 0 then
+--         print(name .. ":" .. warnings[1].y .. ":" .. warnings[1].x .. ": " .. warnings[1].msg)
+--     end
+--     local syntax_errors = result.syntax_errors
+--     if #syntax_errors > 0 then
+--         print(name .. ":" .. syntax_errors[1].y .. ":" .. syntax_errors[1].x .. ": " .. syntax_errors[1].msg)
+--     end
+--     local type_errors = result.type_errors
+--     if #type_errors > 0 then
+--         print(name .. ":" .. type_errors[1].y .. ":" .. type_errors[1].x .. ": " .. type_errors[1].msg)
+--     end
+-- end
 
-
-
-Audio = require"Audio"
-Graphics = require"Graphics"
+require"Audio"
+require"Graphics"
+Collision = require"Collision"
 
 Fonts = Fonts or "C:/Windows/Fonts/" -- Windows font's folder
 
@@ -58,21 +94,12 @@ function NewScene(scene)
     return scene
 end
 
-Layer = require"classes.Layer"
-Text = require"classes.Text"
-Sprite = require"classes.Sprite"
-Mob = require"classes.Mob"
-Vector = require"classes.Vector"
-Color = require"classes.Color"
-
-Color.white = Color{1,1,1,1}
-Color.black = Color{0,0,0,1}
-Color.red = Color{1,0,0,1}
-Color.green = Color{0,1,0,1}
-Color.blue = Color{0,0,1,1}
-Color.yellow = Color{1,1,0,1}
-Color.purple = Color{1,0,1,1}
-Color.none = Color{0,0,0,0}
+Layer = require"classes/Layer"
+Text = require"classes/Text"
+Sprite = require"classes/Sprite"
+Mob = require"classes/Mob"
+Vector = require"classes/Vector"
+Color = require"classes/Color"
 
 _default = NewScene()
 

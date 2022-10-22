@@ -432,6 +432,8 @@ LUA_DLL int luaopen_Audio(lua_L)
     lua_setfield(L, -2, "gc");
     
     luaL_newlib(L, func);  // Audio lib table
+    lua_pushvalue(L, -1);
+    lua_setglobal(L, "Audio");
     lua_nameAtable(L, -2, "Audio");
     lua_createtable(L, 1, 1);   
     luaL_setfuncs(L, meta, 0);  // Audio lib GC meta
