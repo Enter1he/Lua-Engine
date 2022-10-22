@@ -39,7 +39,7 @@ There are several classes that LuaEngine uses:
 # Dependencies
 
 IUP 3.29, 
-lua 5.3,
+lua 5.4,
 pthread,
 FreeType,
 dr_wav,
