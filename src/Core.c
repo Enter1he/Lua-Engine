@@ -646,8 +646,11 @@ int LE_engine_Booting(int *argc, char ***argv)
     IupLoopStep();
   }
   
+<<<<<<< HEAD:src/Core.c
   end:;
   DestroyPthread(&Loading);
+=======
+>>>>>>> cfe6983909db0ad775bb5d75db05d8711523c0dc:Core.c
   IupDestroy(dg);
   IupClose();
   
