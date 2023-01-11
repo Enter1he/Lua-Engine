@@ -1,7 +1,8 @@
 #include "Collision.h"
 
+// C - means circle, P - point, S - square
 
-int CC_Collide(lua_State *L){
+int CC_Collide(lua_State *L){ 
     lua_Number ax, ay, ar, bx, by, br;
     
 
@@ -17,7 +18,7 @@ int CC_Collide(lua_State *L){
     return 1;
 }
 
-int PS_Collide(lua_State* L){
+int PS_Collide(lua_State* L){ 
     lua_Number ax, ay, bx, by, bw, bh;
 
     ax = lua_tonumber(L, 1);
@@ -33,7 +34,7 @@ int PS_Collide(lua_State* L){
     return 1;
 };
 
-int PC_Collide(lua_State* L){
+int PC_Collide(lua_State* L){ 
     lua_Number ax, ay, bx, by, br;
 
     ax = lua_tonumber(L, 1);
@@ -49,7 +50,7 @@ int PC_Collide(lua_State* L){
     return 1;
 };
 
-int SS_Collide(lua_State *L){
+int SS_Collide(lua_State *L){ // 
     lua_Number ax, ay, aw, ah;
     lua_Number bx, by, bw, bh;
 
