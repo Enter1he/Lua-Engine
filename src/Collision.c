@@ -13,7 +13,7 @@ int CC_Collide(lua_State *L){
     by = lua_tonumber(L, 5);
     br = lua_tonumber(L, 6);
 
-    lua_pushboolean(L, ( ((ax - bx)*(ax - bx) + (ay - by)*(ay - by)) <= br*br + ar*ar ) );
+    lua_pushboolean(L, ( ((ax - bx)*(ax - bx) + (ay - by)*(ay - by)) <= (br + ar)*(br + ar) ) );
     return 1;
 }
 
