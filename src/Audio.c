@@ -63,7 +63,7 @@ int LU_CheckFileExt(const char* name, const char* ext){
 
 typedef struct _SoundCore{
     ALuint src, *buf;
-    size_t part;
+    size_t part, size;
     ALenum format;
     ALsizei freq;
     void* data;
@@ -91,7 +91,7 @@ int LA_GetOpenALdata(SoundCore* sc, const char *filename){
         size_t part = (size_t)wav.dataChunkDataSize;
         
         char* pSampleData = (char*)malloc(part);
-        drwav_read_raw(&wav, part, pSampleData);
+        sc->size = drwav_read_raw(&wav, part, pSampleData);
         sc->part = part;
         sc->data = pSampleData;
         sc->format = format;
@@ -114,7 +114,7 @@ int LA_GetOpenALdata(SoundCore* sc, const char *filename){
                 format = AL_FORMAT_STEREO16;
             break;
         }
-        sc->part = len;
+        sc->size = len;
         sc->data = data;
         sc->format = format;
         sc->freq = sample_rate;
@@ -190,7 +190,7 @@ int LE_Load(lua_L){
         topbuff = buffers + lastbuff;
         
         lastbuff += givenbuffers;
-        size_t part = sc->part/givenbuffers;
+        size_t part = sc->size/givenbuffers;
         char* pdata = sc->data;
         alGenBuffers(givenbuffers, topbuff);
         for (int i = 0; i < givenbuffers; i++, pdata+=part){
@@ -206,7 +206,7 @@ int LE_Load(lua_L){
     alGenBuffers(1, topbuff);
     
     
-    alBufferData(*topbuff, AL_FORMAT_MONO16, sc->data, sc->part, sc->freq);
+    alBufferData(*topbuff, AL_FORMAT_MONO16, sc->data, sc->size, sc->freq);
 
     alSourcei(*topsrc, AL_BUFFER, *topbuff);
     
@@ -310,6 +310,16 @@ int S_Play(lua_L){
     return LUA_TNIL;
 }
 
+int S_Stop(lua_L){
+    lua_getvalue(L, 1, "_core");
+    
+    SoundCore * sc = lua_touserdata(L, -1);
+    
+    alSourceStop(sc->src);
+    
+    return LUA_TNIL;
+}
+
 
 
 int S_setPitch(lua_L){
@@ -362,6 +372,7 @@ lua_Table Sound[] = {
     {"isStream", &S_isStream},
     {"Update", &S_Update},
     {"Play", &S_Play},
+    {"Stop", &S_Stop},
     lua_eoT
 };
 
