@@ -1,6 +1,6 @@
 #include "Audio.h"
-
-
+#include "stb_vorbis.c"
+#include "dr_wav.c"
 
 enum Audio_Limits{
     numbuffers = 64,
@@ -472,7 +472,7 @@ LUA_DLL int luaopen_Audio(lua_L)
     lua_rotate(L, -1, 2);
     lua_setglobal(L, "Sound");
 
-    return 1;
+    return 0;
 }
 
 

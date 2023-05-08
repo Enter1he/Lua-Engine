@@ -1,11 +1,7 @@
 -- package.cpath = "./lib/?.dll;./lib/?53.dll;"..package.cpath
 -- package.loaded.name = "loaded"
 ---------------------------------       ENGINE_PART        ----------------------------------
-require"modules/OOP"
 
-EmptyFunc = function() end
-
-require"modules/Controls"
 
 -- if developer then
 --     local tl = require"tl"
@@ -47,9 +43,15 @@ require"modules/Controls"
 --     end
 -- end
 
-require"Audio"
-require"Graphics"
-Collision = require"Collision"
+-- require"Audio"
+-- require"Graphics"
+-- Collision = require"Collision"
+
+require"modules/OOP"
+
+EmptyFunc = function() end
+
+require"modules/Controls"
 
 Fonts = Fonts or "C:/Windows/Fonts/" -- Windows font's folder
 

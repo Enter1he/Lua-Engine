@@ -71,6 +71,8 @@ void lua_tableContets(lua_L, int idx);
 	lua_getidx(L, -2, 2);\
 }
 
-void stackDump(lua_L);
+void stackDumpA(lua_L, int line);
+
+#define stackDump(L) stackDumpA(L, __LINE__)
 
 #endif

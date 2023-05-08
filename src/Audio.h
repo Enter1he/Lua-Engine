@@ -14,6 +14,6 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 
-int open_Audio(lua_L);
+int luaopen_Audio(lua_L);
 
 #endif

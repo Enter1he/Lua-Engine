@@ -81,6 +81,9 @@ static const struct luaL_Reg funcs[] = {
 
 LUA_DLL int luaopen_Collision(lua_State* L){
     luaL_newlib(L, funcs);
+    lua_pushvalue(L, -1);
+    lua_setglobal(L, "Collision");
     lua_nameAtable(L, -2, "Collision");
-    return 1;
+
+    return 0;
 };

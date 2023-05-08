@@ -5,6 +5,6 @@
 
 #include "luadef.h"
 
-int open_Collision(lua_L);
+int luaopen_Collision(lua_L);
 
 #endif

@@ -11,7 +11,8 @@ void lua_tableContets(lua_L, int idx){
 	}
 }
 
-void stackDump(lua_L) {
+void stackDumpA(lua_L, int line) {
+	printf("stackDump on line: %d\n", line);
 	int i;
 	int top = lua_gettop(L);
 	for(i = 1; i <= top; i++) {

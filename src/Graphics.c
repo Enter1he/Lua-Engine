@@ -1,6 +1,8 @@
 #include "Graphics.h"
 
+#include "glew.h"
 
+#include <windows.h>
 
 #include "include/im.h"
 #include "include/im_image.h"
@@ -12,8 +14,137 @@
 #include "include/freetype/ftglyph.h"
 #include FT_FREETYPE_H
 
-#include "mat4.c"
-#include "luadef.h"
+typedef float mat4[16];
+typedef float vec3[3];
+typedef float vec2[2];
+
+void mat4_Ortho(float *out, float left, float right, float bottom, float top, float zNear, float zFar){
+  const float lr = 1 / (left - right);
+  const float bt = 1 / (bottom - top);
+  const float nf = 1 / (zNear - zFar);
+  out[0] = -2 * lr;
+  out[1] = 0;
+  out[2] = 0;
+  out[3] = 0;
+  out[4] = 0;
+  out[5] = -2 * bt;
+  out[6] = 0;
+  out[7] = 0;
+  out[8] = 0;
+  out[9] = 0;
+  out[10] = nf;
+  out[11] = 0;
+  out[12] = (left + right) * lr;
+  out[13] = (top + bottom) * bt;
+  out[14] = zNear * nf;
+  out[15] = 1;
+}
+
+void mat4_Translate2D(float *out, const float *a, float *v){
+  float x = v[0],
+    y = v[1];
+  float a00, a01, a02, a03;
+  float a10, a11, a12, a13;
+  float a20, a21, a22, a23;
+
+  if (a == out) {
+    out[12] = a[0] * x + a[4] * y + a[12];
+    out[13] = a[1] * x + a[5] * y + a[13];
+    out[14] = a[2] * x + a[6] * y + a[14];
+    out[15] = a[3] * x + a[7] * y + a[15];
+  } else {
+    a00 = a[0];
+    a01 = a[1];
+    a02 = a[2];
+    a03 = a[3];
+    a10 = a[4];
+    a11 = a[5];
+    a12 = a[6];
+    a13 = a[7];
+    a20 = a[8];
+    a21 = a[9];
+    a22 = a[10];
+    a23 = a[11];
+
+    out[0] = a00;
+    out[1] = a01;
+    out[2] = a02;
+    out[3] = a03;
+    out[4] = a10;
+    out[5] = a11;
+    out[6] = a12;
+    out[7] = a13;
+    out[8] = a20;
+    out[9] = a21;
+    out[10] = a22;
+    out[11] = a23;
+
+    out[12] = a00 * x + a10 * y + a[12];
+    out[13] = a01 * x + a11 * y + a[13];
+    out[14] = a02 * x + a12 * y + a[14];
+    out[15] = a03 * x + a13 * y + a[15];
+  }
+
+}
+
+void mat4_Scale2D(float *out, float *a, float *v){
+  float x = v[0],
+    y = v[1];
+
+  out[0] = a[0] * x;
+  out[1] = a[1] * x;
+  out[2] = a[2] * x;
+  out[3] = a[3] * x;
+  out[4] = a[4] * y;
+  out[5] = a[5] * y;
+  out[6] = a[6] * y;
+  out[7] = a[7] * y;
+  out[12] = a[12];
+  out[13] = a[13];
+  out[14] = a[14];
+  out[15] = a[15];
+  
+}
+
+void mat4_identity(float *out){
+  out[0] = 1;
+  out[1] = 0;
+  out[2] = 0;
+  out[3] = 0;
+  out[4] = 0;
+  out[5] = 1;
+  out[6] = 0;
+  out[7] = 0;
+  out[8] = 0;
+  out[9] = 0;
+  out[10] = 1;
+  out[11] = 0;
+  out[12] = 0;
+  out[13] = 0;
+  out[14] = 0;
+  out[15] = 1;
+}
+
+void mat4_clone(float *out, float *a){
+  if (a == out) return;
+  out[0] = a[0];
+  out[1] = a[1];
+  out[2] = a[2];
+  out[3] = a[3];
+  out[4] = a[4];
+  out[5] = a[5];
+  out[6] = a[6];
+  out[7] = a[7];
+  out[8] = a[8];
+  out[9] = a[9];
+  out[10] = a[10];
+  out[11] = a[11];
+  out[12] = a[12];
+  out[13] = a[13];
+  out[14] = a[14];
+  out[15] = a[15];
+}
+
 
 #define DEBUG 1
 #undef DEBUG
@@ -60,7 +191,7 @@ typedef struct _Drawable{
 
 typedef struct _textchar{
     GLuint tex;
-    int w,h,top;
+    int w,h,top, left;
     double dx, dy;
 }TextChar;
 
@@ -146,7 +277,6 @@ int LE_LoadText(lua_L)
     FT_Init_FreeType(&Library);
     FT_New_Face(Library, font_folder, 0, &face);
     FT_Set_Char_Size( face, h << 6, h << 6, 96, 96);
-
     
     for (unsigned char ch = 0; ch < 128; ch++){
         
@@ -162,7 +292,8 @@ int LE_LoadText(lua_L)
 
         FT_Bitmap *bitmap= &bitmap_glyph->bitmap;
         
-
+        
+        sc[ch].left = bitmap_glyph->left;
         sc[ch].w = bitmap->width; 
         sc[ch].h = bitmap->rows; 
         sc[ch].top = face->glyph->bitmap_top;
@@ -237,26 +368,24 @@ int LE_DrawText(lua_L)
     unsigned int lineW = 0, plineW = 0;
     for (int i = 0; i < len; i++){
         char ch = value[i]; 
-        
+        char pch = value[i-1];
+        char sp = 'm';
         if (i){
-            char pch = value[i-1];
-            
-            px = (ch == ' ' || ch == '\n') ? sc[37].w: sc[pch].w;
-            
+            px = (ch == ' '|| ch == '\n') ? sc[sp].w: sc[pch].w+sc[ch].left;
+            if (ch == '\t') px = sc[sp].w*4;
+            if (ch == '\r') px = 0;
             lineW += px;
             
             if (pch=='\n'){
                 line++;
                 py = size;
-                px -= lineW-sc[37].w;
+                px -= lineW-sc[sp].w;
                 lineW = 0;
-                
             }else
             {
                 py = 0;
                 px = px;
             }
-
         };
         if (ch != '\n'){
             text_uv[1] = text_uv[3] = sc[ch].dy;
@@ -455,7 +584,7 @@ int LE_DrawSpriteSheet(lua_L)
     vec2 n = {x+offx, y-offy};
 
         mat4_Translate2D(pop, pop, n);
-        n[0] = sc->width*tw, n[1] = sc->height*th;
+        n[0] = sc->width*tw*w, n[1] = sc->height*th*h;
         mat4_Scale2D(pop, pop, n);
 
         glEnable(GL_TEXTURE_2D);
@@ -640,13 +769,13 @@ int LE_DrawLayer(lua_L){
     vec2 n = {-lua_tonumber(L, -2), -lua_tonumber(L, -1)};
     mat4_clone(pop, Pmat);
 
-    mat4_Translate2D(Pmat, Pmat, n);
+    mat4_Translate2D(pop, pop, n);
     
     lua_getvalue(L, 1, "size");
     lua_getA2(L);
     
     n[0] = lua_tonumber(L, -2), n[1] = lua_tonumber(L, -1);
-    mat4_Scale2D(Pmat, Pmat, n);
+    mat4_Scale2D(pop, pop, n);
 
     lua_getvalue(L, 1, "blend");
     int check = lua_tointeger(L, -1);
@@ -654,9 +783,8 @@ int LE_DrawLayer(lua_L){
 
     lua_pop(L, 7);
 
-
-    Graphics_SetMatrix4Layer(Pmat);
     
+    Graphics_SetMatrix4Layer(pop);
     for (int i = 1; i <= lua_rawlen(L,2); i++){
         lua_geti(L, 2, i);
         
@@ -672,8 +800,8 @@ int LE_DrawLayer(lua_L){
         lua_pcall(L, 1, 0, 0);
         glDisable(GL_BLEND);
     }
+    Graphics_SetMatrix4Layer(Pmat);
     
-    mat4_clone(Pmat, pop);
     return 0;
 }
 
@@ -1113,7 +1241,7 @@ void Graphics_SetUniforms(struct Entity *e){
 }
 
 
-LUA_DLL int luaopen_Graphics(lua_L)
+int luaopen_Graphics(lua_L)
 {
     size_t t = lua_gettop(L);
     if (glewInit() != GLEW_OK){
@@ -1212,7 +1340,7 @@ LUA_DLL int luaopen_Graphics(lua_L)
     lua_seti(L, -2, 4);
     lua_setfield(L, -2, "color");
 
-    return 1;
+    return 0;
 }
 
 #undef glExt_cast
