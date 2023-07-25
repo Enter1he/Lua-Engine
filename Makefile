@@ -46,9 +46,10 @@ $(BUILD)Scenes:
 $(BUILD)Scenes/%:
 	xcopy /e /Y "./Scenes" "$(BUILD)Scenes"
 	
+	
 
 
-$(BUILD)LuaEngine.exe: Core.c src/LEGlobals.h $(BUILD)libGraphics.a $(BUILD)libAudio.a $(BUILD)Collision.o
+$(BUILD)LuaEngine.exe: src/Core.c src/LEGlobals.h $(BUILD)libGraphics.a $(BUILD)libAudio.a $(BUILD)Collision.o
 	gcc $(BIT) -I. -L$(LIB) src/Core.c $(BUILD)libGraphics.a $(BUILD)libAudio.a $(BUILD)Collision.o -o $(BUILD)LuaEngine.exe $(LIB)liblua.a \
 	-liup -liupgl -lopengl32 -lglew32 -lfreetype -lim -lim_process -lopenal32
 

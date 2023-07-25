@@ -7,7 +7,7 @@ local Collide = Collision
 -- end
 local  screen = _en.screen
 
-local flowers = 10; local flocount = flowers;
+local flowers = 100; local flocount = flowers;
 local humans = 10
 local zombies = 10 -- numbers of objects
 local npc = {top = {}} 
@@ -48,10 +48,14 @@ local Sim = NewScene{
 
 Controls.AddCommand(B.esc, LE.Close)
 
+
 Controls.AddCommand(B.space, function()
     paused = not paused and true or false
 end)
 
+Controls.AddCommand(B.c, function()
+    LE.isCursor()
+end)
 Controls.AddCommand(B.n, function()
     print(#npc)
     for i = 1, #npc do
@@ -198,7 +202,7 @@ local function drawenemy(a)
 end
 
 function Sim.Load(Sim)
-    
+    LE.setCursor"BUSY"
     print"Load Start"
     player = new(
         {
@@ -275,9 +279,10 @@ function Sim.Load(Sim)
     Listener.pos = player.pos
     print"Load End"
     
-    coroutine.yield()
+    
     for i = 1, 1000000 do
         print(i)
+        coroutine.yield()
     end 
     if zombies > 0 then
 
@@ -305,6 +310,8 @@ local Npc_Update, Obj_Update;
 local fmt = string.format
 function Sim:Update()
     -- print"Update"
+
+
     player:Stop()
     if not paused then
 
@@ -418,6 +425,7 @@ function Npc_Update()
         if a.Draw then 
             Npc_Controls(a)
             a:Act(objs)
+            
         else
            new_gen = true
             -- a:reset(math.random(50,screen.w-50), math.random(0,screen.h-60))
@@ -434,6 +442,18 @@ function Obj_Update()
             a.pos[1], a.pos[2] = math.random(50,screen.w-50), math.random(0,screen.h-60)
             
             a.Draw = flosprite.Draw
+        else
+            for j = 1, #objs do
+                if j ~= i then
+                    local b = objs[j]
+                    
+                    local x, y = Collision.CafC(a.pos[1], a.pos[2], 18, b.pos[1], b.pos[2], 18)
+                    if x ~= 0 or y ~= 0 then
+                        b.pos[1] = b.pos[1] + x
+                        b.pos[2] = b.pos[2] + y
+                    end
+                end
+            end
         end
     end
 end

@@ -1,5 +1,5 @@
 
-local dt = 1/64
+
 local Mob = {
     pos = {0,0};
     vel = {0,0};

@@ -3,6 +3,7 @@
 
 #ifdef WIN32
   #include <windows.h>
+  #include <winuser.h>
 #endif
 
 
@@ -27,16 +28,16 @@ lua_State *l, *nl, *ll; // main, thread and loading stacks pointers
 
 /* Frametime and fps*/ 
 Ihandle *fpst;
-int fpslmt = 60, ftlim; 
+#define FPS_CAP 60
+int fpslmt = FPS_CAP, ftlim = FPS_CAP; 
 short frames = 0;
-double ft = 0.01, fps = 0;
+double ft = 0.01;
+int fps = FPS_CAP;
 
 jmp_buf errB; // jump buffer for errors
 #define error_jump() longjmp(errB, 1);
 
 #define error_message(sl,from) {\
-  luaL_traceback(sl, NULL, "traceback", 0);\
-  printf("%s\n", lua_tostring(sl, -1));\
   printf("%s %s %d %s\n",lua_tostring(sl, -1), __FILE__, __LINE__, from); \
   system("pause");\
   error_jump();\
@@ -168,6 +169,39 @@ int GetActualScreenSize(lua_L){
   lua_pushinteger(L, LE.height);
   return 2;
 }
+void IupResetAttribute(Ihandle *ih, const char* name);
+char *IupGetAttribute(Ihandle *ih, const char *name);
+
+int setCursor(lua_L){
+  const char *str = luaL_checkstring(L, 1);
+  printf("%s ", str);
+  IupSetAttribute(cnv, "CURSOR", "NONE");
+  printf("%s\n", IupGetAttribute(cnv, "CURSOR"));
+
+  return 0;
+}
+
+void IupSetStrf  (Ihandle* ih, const char* name, const char* format, ...);
+int setCursorPos(lua_L){
+  int x = (int)lua_tointeger(l,1), y = (int)lua_tointeger(l, 2);
+  IupSetStrf(NULL, "CURSORPOS", "%dx%d", x, y);
+  return 0;
+} 
+
+int IupGetIntInt(Ihandle* ih, const char* name, int *i1, int *i2);
+int getCursorPos(lua_L){
+  int x,y, cx,cy;
+  IupGetIntInt(NULL, "CURSORPOS", &x, &y);
+  IupGetIntInt(cnv, "SCREENPOSITION", &cx, &cy);
+  lua_pushinteger(l, x-cx);
+  lua_pushinteger(l, y-cy);
+  return 2;
+}
+
+int isCursor(lua_L){
+  printf("%s\n", IupGetAttribute(cnv, "CURSOR"));
+  return 0;
+}
 
 int toWH(lua_L){
   lua_settop(L,1);
@@ -245,6 +279,10 @@ lua_Table LE_util[] ={
   {"Lalloc", &Lalloc},
   { "ResumeLoading", &ResumeLoading},
   { "int", &toInt},
+  {"setCursor", &setCursor},
+  {"isCursor", &isCursor},
+  {"getCursorPos", &getCursorPos},
+  {"setCursorPos", &setCursorPos},
   { "SetFpsLimit", &SetFpsLimit},
   { "WxHtoints", &toWH},
   { "isMouse", &isMouse},
@@ -323,15 +361,14 @@ int LE_idle_action(Ihandle * self){
       lua_xmove(nl, ll, 2);
       int err = lua_resume(ll, nl, 1, &nres);
       if (err != LUA_OK && err != LUA_YIELD){
-        error_message(nl, "Error in parallel load!");
+        error_message(ll, "Error in parallel load!");
       }
       if (nres > 0){
         int isint = 0;
-        lua_Integer res = lua_tointegerx(nl, -1, &isint);
-        if (isint){
-          if (res == 3){
-            break;
-          }
+        lua_Integer res = lua_tointegerx(ll, -1, &isint);
+        if (isint)
+        if (res == 3){
+          break;
         }
       }
       lua_xmove(nl, l, 1);
@@ -483,16 +520,16 @@ int LE_moving_Mouse(Ihandle* self, int x, int y, char* status)
 
 int LE_clicking_Mouse(Ihandle* ih, int button, int pressed, int x, int y, char* status)
 {
-  if (pressed)
-    if (lua_getfield(l, CurScene, "Button") == LUA_TFUNCTION)
-      if (lua_topointer(l, -1) != EmptyFunc){
-        lua_pushinteger(l, x);
-        lua_pushinteger(l, y);
-        lua_pushstring(l, status);
-        if (lua_pcall(l, 3, 0, 0)){
-          error_message(l, "Scene Button callback")
-        }
+  if (lua_getfield(l, CurScene, "Button") == LUA_TFUNCTION)
+    if (lua_topointer(l, -1) != EmptyFunc){
+      lua_pushboolean(l, pressed);
+      lua_pushinteger(l, x);
+      lua_pushinteger(l, y);
+      lua_pushstring(l, status);
+      if (lua_pcall(l, 4, 0, 0)){
+        error_message(l, "Scene Button callback")
       }
+    }
   lua_settop(l, numArgs);
   return 0;
 }
@@ -628,41 +665,50 @@ int LE_engine_Booting(int *argc, char ***argv)
     IupSetAttribute(dg, "FULLSCREEN", "YES");
   lua_pop(l, 1);
   
-  
-  lua_pushnumber(l, fps);
-  lua_setglobal(l, "fps");
-  lua_pushnumber(l, ft);
-  lua_setglobal(l, "ft");
 
   
   
-  ftlim = 1000000/fpslmt;
+  ftlim = 60;
   
   IupSetAttribute(dg, "UTF8MODE", "YES");
   IupShow(dg);
   IupSetFocus(cnv);
-  LONGLONG fpst_c = 1, dt = 1;
+  LONGLONG fpst_c = 1;
+  double dt = 1.0/ftlim;
 
   exet = setjmp(errB);
   if (exet) { goto end;}
 
+  
 
-  fpst_c = CpuMs();
+  double cur_t = CpuMs() * 1e-06, prev_t = 0, prevFpsU = cur_t;
   
   while (exet == 0){
-    dt = CpuMs()-fpst_c;
+    frames++;
+
+    prev_t = cur_t;
+    cur_t = CpuMs()* 1e-06;
+    dt = cur_t - prev_t;
+    
+    
+    double time_since = cur_t - prevFpsU;
     IupLoopStep();
-    if (dt >= ftlim){
+    if (time_since >= 1/ftlim){
       
-      LE_updating_canvas();
-      IupRedraw(cnv, 0);
+      fps = (int)((frames/time_since)+0.5);
       
-      fpst_c = CpuMs();
+      
+      frames = 0;
+      prevFpsU = cur_t;
     }
-    lua_pushnumber(l, dt * 1e-06);
+    
+    lua_pushnumber(l, dt);
     lua_setglobal(l, "dt");
-    lua_pushnumber(l, 1 / (dt * 1e-06));
+    lua_pushinteger(l, fps);
     lua_setglobal(l, "fps");
+    
+    LE_updating_canvas();
+      IupRedraw(cnv, 0);
     
     if (loadScene == NEW_LOAD || loadScene == LOADING_SCENE || loadScene == RELOAD_SCENE)
       LE_idle_action(NULL);
@@ -678,9 +724,10 @@ int LE_engine_Booting(int *argc, char ***argv)
 
 //////////////////////// MAIN INITIALIZATION \\\\\\\\\\\\\\\\\\\\\\
 
+
 int main(int argc, char **argv)
 {
-  // freopen("log.txt", "w", stdout);
+ 
   signal(SIGSEGV, LE_Signal);
   signal(SIGILL, LE_Signal);
   signal(SIGINT, LE_Signal);
@@ -694,8 +741,15 @@ int main(int argc, char **argv)
   luaL_newlib(l, LE_util);
   lua_setglobal(l, "LE");
   
-  
+  lua_pushnumber(l, 1.0/ftlim);
+  lua_setglobal(l, "dt");
+  lua_pushnumber(l, ftlim);
+  lua_setglobal(l, "fps");
+  lua_pushnumber(l, ft);
+  lua_setglobal(l, "ft");
+
   lua_require(l, "config");
+
   lua_getglobal(l, "startscene");
   LE.sceneindex = luaL_checkinteger(l, -1);
   lua_getglobal(l, "_en");

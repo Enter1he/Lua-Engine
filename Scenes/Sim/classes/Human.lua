@@ -19,7 +19,7 @@ function Human.new(x,y)
         stamina = 100;
         Act = Human.Act;
         reset = Human.reset;
-        s_max = 400;
+        s_max = 100;
         tick = 0;
     };
     Sprite.newSheet(a)
@@ -115,12 +115,22 @@ function Human:Act(flowers)
     for j = 1, #flowers do
         b = flowers[j]
         if b.Draw then
-            if CtC(a.pos[1], a.pos[2] , 25, b.pos[1], b.pos[2], 18) then
-                local n = #flowers
-                a.score = a.score + 5
-                b.Draw = false
-                break
+            for j = 1, #flowers do
+                if j ~= i then
+                    local b = flowers[j]
+                    local x, y = Collision.CafC(a.pos[1], a.pos[2], 25, b.pos[1], b.pos[2], 18)
+                    if x ~= 0 or y ~= 0 then
+                        b.pos[1] = b.pos[1] + x
+                        b.pos[2] = b.pos[2] + y
+                    end
+                end
             end
+            -- if CtC(a.pos[1], a.pos[2] , 25, b.pos[1], b.pos[2], 18) then
+            --     local n = #flowers
+            --     a.score = a.score + 5
+            --     b.Draw = false
+            --     break
+            -- end
         end
         
     end

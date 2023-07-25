@@ -10,6 +10,7 @@ function default:Load()
     text:Load()
     pos = text.pos
     main:AddDrawable(text)
+    
 end
 
 function default:Update()

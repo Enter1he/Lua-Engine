@@ -16,9 +16,9 @@ LUALIB_API void (luaL_openlibs) (lua_State *L);
 #define lua_require(L, modname){\
   lua_getglobal(L, "require");\
   lua_pushstring(L, modname);\
-  if(lua_pcall(L, 1, 1, 0)){\
+  if(lua_pcall(L, 1, 1, 1)){\
 	  printf("%s",lua_tostring(L, -1));\
-    getchar();\
+    system("pause");\
   }\
 }
 
@@ -69,6 +69,17 @@ void lua_tableContets(lua_L, int idx);
 #define lua_getA2(L){\
 	lua_getidx(L, -1, 1);\
 	lua_getidx(L, -2, 2);\
+}
+
+#define lua_toA4(L, arr, tofunc){\
+  lua_getidx(L, -1, 1);\
+  lua_getidx(L, -2, 2);\
+  lua_getidx(L, -3, 3);\
+  lua_getidx(L, -4, 4);\
+  arr[0] = tofunc(L,-4);\
+  arr[1] = tofunc(L,-3);\
+  arr[2] = tofunc(L,-2);\
+  arr[3] = tofunc(L,-1);\
 }
 
 void stackDumpA(lua_L, int line);

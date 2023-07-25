@@ -155,10 +155,14 @@ gvertex[] = {
     0, 1,
     1, 1,
     0, 0,
+    1, 1,
+    0, 0,
     1, 0,
 
     
     0, 1,
+    1, 1,
+    0, 0,
     1, 1,
     0, 0,
     1, 0,
@@ -166,6 +170,8 @@ gvertex[] = {
 tverts[] = {
     
     0, 1,
+    1, 1,
+    0, 0,
     1, 1,
     0, 0,
     1, 0,
@@ -177,7 +183,7 @@ struct Entity{
         GLuint pnt, clr, pro, mod;
     }uniforms;
 }Dyn, Sta, Prim;
-GLdouble colors[16] = {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, texcoords[8], text_uv[8]; // arrays that change over time
+GLdouble colors[24] = {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, texcoords[12], text_uv[12]; // arrays that change over time
 mat4 Pmat = {};
 mat4 Mmat = {};
 
@@ -188,6 +194,18 @@ typedef struct _Drawable{
     lua_Number **src;
 }Drawable;
 
+const size_t maxVertex = 1000;
+typedef struct _Batch{
+    size_t numVertex, freeVertex;
+    GLuint vbo, ubo, vao;
+    GLdouble *vertex, *texcoord;
+    Drawable *base;
+    struct Entity* type;
+}Batch;
+
+typedef struct _Vertex{
+    GLdouble pos[2], uv[4], color[4];
+}Vertex;
 
 typedef struct _textchar{
     GLuint tex;
@@ -388,8 +406,8 @@ int LE_DrawText(lua_L)
             }
         };
         if (ch != '\n'){
-            text_uv[1] = text_uv[3] = sc[ch].dy;
-            text_uv[2] = text_uv[6] = sc[ch].dx;
+            text_uv[7] = text_uv[1] = text_uv[3] = sc[ch].dy;
+            text_uv[2] = text_uv[6] = text_uv[10] = sc[ch].dx;
             
             n[0] = px; n[1] = py;
             mat4_Translate2D(pop1, pop1, n);
@@ -412,7 +430,7 @@ int LE_DrawText(lua_L)
             glUniform4f( glGetUniformLocation(Dyn.sh, "clr"), colors[0], colors[1], colors[2], colors[3]);
 
             glBindBuffer(GL_ARRAY_BUFFER, 0);
-            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
 
             glUseProgram(0);
             glBindTexture(GL_TEXTURE_2D, 0);
@@ -423,71 +441,7 @@ int LE_DrawText(lua_L)
     return 0;
 }
 
-//DrawSprite (sprite : table)
-int LE_DrawSingleSprite(lua_L){
-    #ifdef DEBUG
-        Graphics_checkargs(L, "Graphics.DrawSprite", 1, "t");
-    #endif
-    if (!lua_getfield(L, 1, "visible")) return 0;
-
-    lua_getvalue(L, 1, "_drawable");
-    Drawable *sc = lua_touserdata(L, -1);
-    
-    lua_settop(L, 1);
-    lua_getvalue(L, 1, "pos");
-    lua_getvalue(L, 1, "origin");
-    
-
-    lua_getidx(L, 2, 1);       //Sprite pos x
-    lua_getidx(L, 2, 2);       //Sprite pos y
-    lua_getidx(L, 3, 1);       //Sprite width
-    lua_getidx(L, 3, 2);       //Sprite height
-    
-    
-    
-    lua_Number w = sc->width, h = sc->height;
-    lua_Number x = lua_tonumber(L,4), offx = w*lua_tonumber(L,6), 
-               y = lua_tonumber(L,5), offy = h*lua_tonumber(L,7);
-    
-    lua_settop(L, 1);
-
-
-    lua_getvalue(L, 1, "color");
-    lua_getA4(L);
-    colors[0] = lua_tonumber(L,3);
-    colors[1] = lua_tonumber(L,4);
-    colors[2] = lua_tonumber(L,5);
-    colors[3] = lua_tonumber(L,6);
-    
-    mat4 pop;
-    mat4_clone(pop, Mmat);
-    vec2 n = {x+offx,y-offy};
-
-    mat4_Translate2D(pop, pop, n);
-    n[0] = w, n[1] = h;
-    mat4_Scale2D(pop, pop, n);
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, sc->tex);
-
-    // glBindVertexArray(Sta.vao);
-    glUseProgram(Sta.sh);
-    glUniformMatrix4fv( Sta.uniforms.mod, 1, 0, pop);
-    glUniform4f( Sta.uniforms.clr, colors[0], colors[1], colors[2], colors[3]);
-
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-    glUseProgram(0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    // glBindVertexArray(0);
-    lua_settop(L, 1);
-
-    glDisable(GL_TEXTURE_2D);
-
-    lua_getvalue(L, 1, "angle");
-    
-    return 0;
-}
-
+int LE_DrawSingleSprite(lua_L);
 //LoadSprite (sprite : table, folder : string, linear : boolean)
 int LE_LoadSingleSprite(lua_L)
 {
@@ -521,97 +475,68 @@ int LE_LoadSingleSprite(lua_L)
     return 0;
 }
 
-// DrawSpriteSheet (Sp_sheet : table)
-int LE_DrawSpriteSheet(lua_L)
-{
+//DrawSprite (sprite : table)
+int LE_DrawSingleSprite(lua_L){
     #ifdef DEBUG
-        Graphics_checkargs(L, "Graphics.DrawSpriteSheet", 1, "t");
+        Graphics_checkargs(L, "Graphics.DrawSprite", 1, "t");
     #endif
     if (!lua_getfield(L, 1, "visible")) return 0;
-    
+
     lua_getvalue(L, 1, "_drawable");
-    
     Drawable *sc = lua_touserdata(L, -1);
     
-    lua_pop(L,2);
-    
-    
-    if(lua_getfield(L, 1, "pos")){
-        lua_getidx(L, 2, 1);
-        lua_getidx(L, 2, 2);
-    }else{
-        lua_pushnumber(L, 0);
-        lua_pushnumber(L, 0);
-    }
-    double x = lua_tonumber(L, -2), y = lua_tonumber(L, -1);
-    
-    lua_getvalue(L, 1, "color");
-    lua_getA4(L);
-    colors[0] =  lua_tonumber(L,-4);
-    colors[1] =  lua_tonumber(L,-3);
-    colors[2] = lua_tonumber(L,-2);
-    colors[3] = lua_tonumber(L,-1);
-
     lua_settop(L, 1);
-    
+    lua_getvalue(L, 1, "pos");
     lua_getvalue(L, 1, "origin");
-    lua_getA2(L);
-    lua_getvalue(L, 1, "size");
-    lua_getA2(L);
     
-    double w = lua_tonumber(L, -2), h = lua_tonumber(L,-1);
-    double offy = lua_tonumber(L, -4), offx = lua_tonumber(L, -5);
+
+    lua_getidx(L, 2, 1);       //Sprite pos x
+    lua_getidx(L, 2, 2);       //Sprite pos y
+    lua_getidx(L, 3, 1);       //Sprite width
+    lua_getidx(L, 3, 2);       //Sprite height
     
-    lua_getvalue(L, 1, "angle");
-    lua_getvalue(L, 1, "frame");
-    lua_getvalue(L, 1, "anim");
-    int anim = lua_tointeger(L, -1), frame = lua_tointeger(L, -2); double angle = lua_tonumber(L, -3);
     
+    
+    lua_Number w = sc->width, h = sc->height;
+    lua_Number x = lua_tonumber(L,4), offx = w*lua_tonumber(L,6), 
+               y = lua_tonumber(L,5), offy = h*lua_tonumber(L,7);
     
     lua_settop(L, 1);
-    
- 
-    GLdouble tw = sc->src[anim-1][2], th = sc->src[anim-1][3];
-    GLdouble tx = sc->src[anim-1][0] + frame*tw, ty = sc->src[anim-1][1]; 
 
-    
-    texcoords[4] = texcoords[0] = tx; texcoords[7] = texcoords[5] = ty; 
-    texcoords[6] = texcoords[2] = tx + tw;    texcoords[3] = texcoords[1] = ty + th;
 
-    offx *= tw*sc->width, offy *= th*sc->height;
+    lua_getvalue(L, 1, "color");
+    lua_toA4(L, colors, lua_tonumber);
+    
     mat4 pop;
     mat4_clone(pop, Mmat);
-    vec2 n = {x+offx, y-offy};
+    vec2 n = {x+offx,y-offy};
 
-        mat4_Translate2D(pop, pop, n);
-        n[0] = sc->width*tw*w, n[1] = sc->height*th*h;
-        mat4_Scale2D(pop, pop, n);
+    mat4_Translate2D(pop, pop, n);
+    n[0] = w, n[1] = h;
+    mat4_Scale2D(pop, pop, n);
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, sc->tex);
 
-        glEnable(GL_TEXTURE_2D);
+    // glBindVertexArray(Sta.vao);
+    glUseProgram(Sta.sh);
+    glUniformMatrix4fv( Sta.uniforms.mod, 1, 0, pop);
+    glUniform4f( Sta.uniforms.clr, colors[0], colors[1], colors[2], colors[3]);
 
-        glBindTexture(GL_TEXTURE_2D, sc->tex);
-        
-        glBindVertexArray(Dyn.vao);
-        glBindBuffer(GL_ARRAY_BUFFER, Dyn.vbo);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(texcoords), texcoords);
-        // glBufferSubData(GL_ARRAY_BUFFER, sizeof(texcoords), sizeof(texcoords), gvertex);
-        
-        glUseProgram(Dyn.sh);
-        glUniformMatrix4fv( Dyn.uniforms.mod, 1, 0, pop);
-        glUniform4f( Dyn.uniforms.clr, colors[0], colors[1], colors[2], colors[3]);
-        
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glUseProgram(0);
-        glBindVertexArray(0);
-        glBindTexture(GL_TEXTURE_2D, 0);
-        
-        glDisable(GL_TEXTURE_2D);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 
+    glUseProgram(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    // glBindVertexArray(0);
+    lua_settop(L, 1);
 
+    glDisable(GL_TEXTURE_2D);
+
+    lua_getvalue(L, 1, "angle");
+    
     return 0;
 }
 
+int LE_DrawSpriteSheet(lua_L);
 // LoadSpriteSheet (Sp_sheet: table, Sp_desc_folder: string, linear: boolean)
 int LE_LoadSpriteSheet(lua_L)
 {
@@ -636,7 +561,7 @@ int LE_LoadSpriteSheet(lua_L)
     lua_pushvalue(L,-2);
     
     lua_concat(L, 2);
-    // printf("error?");
+    
     Drawable *sc = lua_newuserdata(L, sizeof(Drawable));
     sc->method = &LE_DrawSpriteSheet;
     lua_setfield(L, 1, "_drawable");
@@ -693,6 +618,252 @@ int LE_LoadSpriteSheet(lua_L)
     return 0;
 }
 
+// DrawSpriteSheet (Sp_sheet : table)
+int LE_DrawSpriteSheet(lua_L)
+{
+    #ifdef DEBUG
+        Graphics_checkargs(L, "Graphics.DrawSpriteSheet", 1, "t");
+    #endif
+    if (!lua_getfield(L, 1, "visible")) return 0;
+    
+    lua_getvalue(L, 1, "_drawable");
+    
+    Drawable *sc = lua_touserdata(L, -1);
+    
+    lua_pop(L,2);
+    
+    
+    if(lua_getfield(L, 1, "pos")){
+        lua_getidx(L, 2, 1);
+        lua_getidx(L, 2, 2);
+    }else{
+        lua_pushnumber(L, 0);
+        lua_pushnumber(L, 0);
+    }
+    double x = lua_tonumber(L, -2), y = lua_tonumber(L, -1);
+    
+    lua_getvalue(L, 1, "color");
+    lua_getA4(L);
+    colors[0] =  lua_tonumber(L,-4);
+    colors[1] =  lua_tonumber(L,-3);
+    colors[2] = lua_tonumber(L,-2);
+    colors[3] = lua_tonumber(L,-1);
+
+    lua_settop(L, 1);
+    
+    lua_getvalue(L, 1, "origin");
+    lua_getA2(L);
+    lua_getvalue(L, 1, "size");
+    lua_getA2(L);
+    
+    double w = lua_tonumber(L, -2), h = lua_tonumber(L,-1);
+    double offy = lua_tonumber(L, -4), offx = lua_tonumber(L, -5);
+    
+    lua_getvalue(L, 1, "angle");
+    lua_getvalue(L, 1, "frame");
+    lua_getvalue(L, 1, "anim");
+    int anim = lua_tointeger(L, -1), frame = lua_tointeger(L, -2); double angle = lua_tonumber(L, -3);
+    
+    
+    lua_settop(L, 1);
+    
+ 
+    GLdouble tw = sc->src[anim-1][2], th = sc->src[anim-1][3];
+    GLdouble tx = sc->src[anim-1][0] + frame*tw, ty = sc->src[anim-1][1]; 
+
+    // 0, 1,
+    // 1, 1,
+    // 0, 0,
+    // 1, 1,
+    // 0, 0,
+    // 1, 0,
+    
+    texcoords[8] = texcoords[4] = texcoords[0] = tx;  texcoords[9] = texcoords[11] = texcoords[5] = ty; 
+    texcoords[10] = texcoords[6] = texcoords[2] = tx + tw;    texcoords[7] = texcoords[3] = texcoords[1] = ty + th;
+
+    offx *= tw*sc->width, offy *= th*sc->height;
+    mat4 pop;
+    mat4_clone(pop, Mmat);
+    vec2 n = {x+offx, y-offy};
+
+        mat4_Translate2D(pop, pop, n);
+        n[0] = sc->width*tw*w, n[1] = sc->height*th*h;
+        mat4_Scale2D(pop, pop, n);
+
+        glEnable(GL_TEXTURE_2D);
+
+        glBindTexture(GL_TEXTURE_2D, sc->tex);
+        
+        glBindVertexArray(Dyn.vao);
+        glBindBuffer(GL_ARRAY_BUFFER, Dyn.vbo);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(texcoords), texcoords);
+        // glBufferSubData(GL_ARRAY_BUFFER, sizeof(texcoords), sizeof(texcoords), gvertex);
+        
+        glUseProgram(Dyn.sh);
+        glUniformMatrix4fv( Dyn.uniforms.mod, 1, 0, pop);
+        glUniform4f( Dyn.uniforms.clr, colors[0], colors[1], colors[2], colors[3]);
+        
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glUseProgram(0);
+        glBindVertexArray(0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        
+        glDisable(GL_TEXTURE_2D);
+
+
+    return 0;
+}
+
+int LE_LoadBatch(lua_L){
+    if (lua_gettop(L) != 2) Error_print("LoadBatch function takes exactly 2 arguments!");
+    luaL_checktype(L, 1, LUA_TTABLE);
+    luaL_checktype(L, 2, LUA_TTABLE);
+    lua_getvalue(L, 2, "_drawable");
+    luaL_checktype(L, -1, LUA_TUSERDATA);
+    
+    Batch *b = lua_newuserdata(L, sizeof(Batch));
+    lua_setfield(L, 1, "_batch");
+    b->base = (Drawable *)lua_touserdata(L, -1);
+
+    
+    if (b->base->method == &LE_DrawSingleSprite){
+        b->type = &Dyn;
+    }else 
+    if (b->base->method == &LE_DrawSpriteSheet){
+        b->type = &Dyn;
+    }else{
+        Error_print("LoadBatch Unknown drawable!");
+    }
+
+    b->numVertex = 0;
+    b->freeVertex = 60;
+    b->vertex = (GLdouble*)calloc(b->freeVertex*2, sizeof(GLdouble));
+    b->texcoord = (GLdouble*)calloc(b->freeVertex*2, sizeof(GLdouble));
+
+    if (b->base->method == LE_DrawSingleSprite){
+        for (int i = 0; i < b->freeVertex*2; i+=12){
+            b->texcoord[i] = 0;     b->texcoord[i+1] = 0;
+            b->texcoord[i+2] = 1;   b->texcoord[i+3] = 0;
+            b->texcoord[i+4] = 0;   b->texcoord[i+5] = 1;
+            b->texcoord[i+6] = 1;   b->texcoord[i+7] = 0;
+            b->texcoord[i+8] = 0;   b->texcoord[i+9] = 1;
+            b->texcoord[i+10] = 1;  b->texcoord[i+11] = 1;
+        }
+    }
+
+    glGenVertexArrays(1, &b->vao);
+    glGenBuffers(1, &b->vbo);
+    glGenBuffers(1, &b->ubo);
+
+    glBindVertexArray(b->vao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, b->vbo);
+    glBufferData(GL_ARRAY_BUFFER, b->freeVertex*sizeof(GLdouble)*2, b->vertex, GL_STREAM_DRAW);
+    glVertexAttribPointer(1, 2, GL_DOUBLE, GL_TRUE, 2*sizeof(GLdouble), 0);
+    
+    glBindBuffer(GL_ARRAY_BUFFER, b->ubo);
+    glBufferData(GL_ARRAY_BUFFER, b->freeVertex*sizeof(GLdouble)*2, b->texcoord, (b->base->method == LE_DrawSingleSprite) ? GL_STATIC_DRAW : GL_STREAM_DRAW);
+    glVertexAttribPointer(0, 2, GL_DOUBLE, GL_TRUE, 2*sizeof(GLdouble), 0);
+
+    
+    glEnableVertexAttribArray ( 0 );
+    glEnableVertexAttribArray ( 1 );
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    return 0;
+}
+
+int LE_DrawBatch(lua_L){
+    if (lua_gettop(L) != 1) Error_print("DrawBatch function takes exactly 1 argument!");
+    luaL_checktype(L, 1, LUA_TTABLE);
+    lua_getvalue(L, 1, "_batch");
+    luaL_checktype(L, -1, LUA_TUSERDATA);
+
+    Batch *b = lua_touserdata(L, -1);
+    if (b->numVertex == 0) return 0;
+    lua_getvalue(L, 1, "color");
+    lua_toA4(L, colors, lua_tonumber);
+    
+    
+    mat4 pop;
+    mat4_clone(pop, Mmat);
+
+    glBindTexture(GL_TEXTURE_2D, b->base->tex);
+    glBindVertexArray(b->vao);
+    
+    glUseProgram(Dyn.sh);
+    glUniformMatrix4fv( Dyn.uniforms.mod, 1, 0, pop);
+    glUniform4f( Dyn.uniforms.clr, colors[0], colors[1], colors[2], colors[3]);
+
+    glDrawArrays(GL_TRIANGLES, 0, b->numVertex*2);
+    
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glUseProgram(0);
+    glBindVertexArray(0);
+    
+
+    return 0;
+}
+
+int LE_BatchAdd(lua_L){
+    if (lua_gettop(L) != 1) Error_print("LoadBatch function takes exactly 1 argument!");
+    luaL_checktype(L, 1, LUA_TTABLE);
+    lua_Number x = luaL_checknumber(L, 2), y = luaL_checknumber(L, 3);
+    lua_getvalue(L, 1, "_batch");
+    luaL_checktype(L, -1, LUA_TUSERDATA);
+    Batch *b = lua_touserdata(L, -1);
+    char reallocate = 0;
+    if (b->freeVertex == 0){
+        reallocate = 1;
+        size_t size = b->numVertex*(1.5*12);
+        GLdouble *ndata = (GLdouble*)calloc(size, sizeof(GLdouble));
+        for (int i = 0; i < b->numVertex; i++){
+            ndata[i] = b->vertex[i];
+        }
+        free(b->vertex);
+        b->vertex = ndata;
+        b->freeVertex = size - b->numVertex;
+    }
+    size_t first = b->numVertex;
+    lua_Number w = b->base->width, h = b->base->height;
+    
+    b->vertex[first] = x;
+    b->vertex[first+1] = y;
+    b->vertex[first+2] = x+w;
+    b->vertex[first+3] = y;
+    b->vertex[first+4] = x;
+    b->vertex[first+5] = y+h;
+    b->vertex[first+6] = x+w;
+    b->vertex[first+7] = y;
+    b->vertex[first+8] = x;
+    b->vertex[first+9] = y+h;
+    b->vertex[first+10] = x+w;
+    b->vertex[first+11] = y+h;
+
+    b->freeVertex -= 6;
+    b->numVertex += 6;
+    glBindBuffer(GL_ARRAY_BUFFER, b->vbo);
+    if (reallocate){
+        glBufferData(GL_ARRAY_BUFFER, (b->freeVertex+b->numVertex)*sizeof(GLdouble)*((b->base != &Dyn)?2:4), b->vertex, GL_STREAM_DRAW);
+    }else{
+        glBufferSubData(GL_ARRAY_BUFFER, 2*b->numVertex*sizeof(GLdouble), 12*sizeof(GLdouble), b->vertex+first);
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    return 0;
+}
+
+int _LE_BatchGC(lua_L){
+    luaL_checktype(L, 1, LUA_TTABLE);
+    lua_getvalue(L, 1, "_batch");
+    Batch *b = lua_touserdata(L, -1);
+    free(b->vertex);
+    glDeleteBuffers(1, b->vbo);
+    glDeleteVertexArrays(1, b->vao);
+    return 0;
+}
 
 //////////////////////////////////// METHODS TO WORK WITH OBJECT'S CORES \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
@@ -727,27 +898,6 @@ int Sp_SetOSize(lua_L){
 
 
 ////////////////////////////////////////////// LAYERS ARE HANDLED HERE \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-
-typedef struct _Batch{
-    GLuint vbo, vao, tex;
-    Drawable *d; 
-    size_t n; // number of objects in a batch
-}Batch;
-
-//CreateBuffer (table, integer)
-int LE_CreateBuffer(lua_L){
-    Batch *b = lua_newuserdata(L, sizeof(Batch));
-    lua_getvalue(L, 1, "_drawable");
-    b->d = lua_touserdata(L, -1);
-    b->n = luaL_checkinteger(L, 2);
-
-    glGenBuffers(1, &b->vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, b->vbo);
-    glBufferData(GL_ARRAY_BUFFER, b->n*8*sizeof(GLdouble), NULL, GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    return 0;
-}
-
 
 void Graphics_SetMatrix4Layer(float* mat){
     glUseProgram(Prim.sh);
@@ -1085,6 +1235,10 @@ lua_Table func[] = {
     {"LoadSprite", &LE_LoadSingleSprite},
     {"DrawSprite", &LE_DrawSingleSprite},
 
+    {"LoadBatch", &LE_LoadBatch},
+    {"DrawBatch", &LE_DrawBatch},
+    {"_BatchGC", &_LE_BatchGC},
+
 
     {"LoadSpriteSheet", &LE_LoadSpriteSheet},
     {"GetSize", &Sp_GetOSize},
@@ -1138,8 +1292,10 @@ void main()\n\
 }",
 * single_vs = 
 "#version 330 core      \n\
-vec2 vert[4] = vec2[](\n\
+vec2 vert[6] = vec2[](\n\
     vec2(0, 1),         \n\
+    vec2(1, 1),         \n\
+    vec2(0, 0),         \n\
     vec2(1, 1),         \n\
     vec2(0, 0),         \n\
     vec2(1, 0)          \n\
@@ -1149,7 +1305,8 @@ uniform mat4 pro;       \n\
 out vec2 texc;          \n\
 void main()             \n\
 {                       \n\
-    texc = vert[gl_VertexID];    \n\
+    int id = gl_VertexID;\n\
+    texc = vert[id];    \n\
     gl_Position = pro*mod*vec4(texc, 0, 1.0);\n\
 }",
 * single_fs = 
@@ -1279,7 +1436,7 @@ int luaopen_Graphics(lua_L)
     glBindBuffer(GL_ARRAY_BUFFER, Sta.vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(colors), NULL, GL_STATIC_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(texcoords), gvertex);
-    glBufferSubData(GL_ARRAY_BUFFER, sizeof(texcoords), sizeof(texcoords), gvertex+8);
+    glBufferSubData(GL_ARRAY_BUFFER, sizeof(texcoords), sizeof(texcoords), gvertex+12);
     glVertexAttribPointer(0, 2, GL_DOUBLE, GL_TRUE, 2*sizeof(GLdouble), 0);
     glVertexAttribPointer(1, 2, GL_DOUBLE, GL_TRUE, 2*sizeof(GLdouble), (void*)(sizeof(texcoords)));
     
