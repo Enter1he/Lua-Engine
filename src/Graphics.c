@@ -194,14 +194,7 @@ typedef struct _Drawable{
     lua_Number **src;
 }Drawable;
 
-const size_t maxVertex = 1000;
-typedef struct _Batch{
-    size_t numVertex, freeVertex;
-    GLuint vbo, ubo, vao;
-    GLdouble *vertex, *texcoord;
-    Drawable *base;
-    struct Entity* type;
-}Batch;
+
 
 typedef struct _Vertex{
     GLdouble pos[2], uv[4], color[4];
@@ -715,6 +708,17 @@ int LE_DrawSpriteSheet(lua_L)
     return 0;
 }
 
+
+
+const size_t maxVertex = 1000;
+typedef struct _Batch{
+    size_t numVertex, freeVertex;
+    GLuint vbo, ubo, vao;
+    GLdouble *vertex, *texcoord;
+    Drawable *base;
+    struct Entity* type;
+}Batch;
+
 int LE_LoadBatch(lua_L){
     if (lua_gettop(L) != 2) Error_print("LoadBatch function takes exactly 2 arguments!");
     luaL_checktype(L, 1, LUA_TTABLE);
@@ -728,7 +732,7 @@ int LE_LoadBatch(lua_L){
 
     
     if (b->base->method == &LE_DrawSingleSprite){
-        b->type = &Dyn;
+        b->type = &Sta;
     }else 
     if (b->base->method == &LE_DrawSpriteSheet){
         b->type = &Dyn;
@@ -776,38 +780,6 @@ int LE_LoadBatch(lua_L){
     return 0;
 }
 
-int LE_DrawBatch(lua_L){
-    if (lua_gettop(L) != 1) Error_print("DrawBatch function takes exactly 1 argument!");
-    luaL_checktype(L, 1, LUA_TTABLE);
-    lua_getvalue(L, 1, "_batch");
-    luaL_checktype(L, -1, LUA_TUSERDATA);
-
-    Batch *b = lua_touserdata(L, -1);
-    if (b->numVertex == 0) return 0;
-    lua_getvalue(L, 1, "color");
-    lua_toA4(L, colors, lua_tonumber);
-    
-    
-    mat4 pop;
-    mat4_clone(pop, Mmat);
-
-    glBindTexture(GL_TEXTURE_2D, b->base->tex);
-    glBindVertexArray(b->vao);
-    
-    glUseProgram(Dyn.sh);
-    glUniformMatrix4fv( Dyn.uniforms.mod, 1, 0, pop);
-    glUniform4f( Dyn.uniforms.clr, colors[0], colors[1], colors[2], colors[3]);
-
-    glDrawArrays(GL_TRIANGLES, 0, b->numVertex*2);
-    
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glUseProgram(0);
-    glBindVertexArray(0);
-    
-
-    return 0;
-}
-
 int LE_BatchAdd(lua_L){
     if (lua_gettop(L) != 1) Error_print("LoadBatch function takes exactly 1 argument!");
     luaL_checktype(L, 1, LUA_TTABLE);
@@ -818,13 +790,12 @@ int LE_BatchAdd(lua_L){
     char reallocate = 0;
     if (b->freeVertex == 0){
         reallocate = 1;
-        size_t size = b->numVertex*(1.5*12);
-        GLdouble *ndata = (GLdouble*)calloc(size, sizeof(GLdouble));
-        for (int i = 0; i < b->numVertex; i++){
-            ndata[i] = b->vertex[i];
-        }
-        free(b->vertex);
+        size_t size = 1.5*b->numVertex*(12);
+        
+        GLdouble *ndata = (GLdouble*)realloc(b->vertex, size);
         b->vertex = ndata;
+        ndata = (GLdouble*)realloc(b->texcoord, size);
+        b->texcoord = ndata;
         b->freeVertex = size - b->numVertex;
     }
     size_t first = b->numVertex;
@@ -843,6 +814,19 @@ int LE_BatchAdd(lua_L){
     b->vertex[first+10] = x+w;
     b->vertex[first+11] = y+h;
 
+    b->texcoord[first] = 0;
+    b->texcoord[first+1] = 0;
+    b->texcoord[first+2] = 1;
+    b->texcoord[first+3] = 0;
+    b->texcoord[first+4] = 0;
+    b->texcoord[first+5] = 1;
+    b->texcoord[first+6] = 1;
+    b->texcoord[first+7] = 0;
+    b->texcoord[first+8] = 0;
+    b->texcoord[first+9] = 1;
+    b->texcoord[first+10] = 1;
+    b->texcoord[first+11] = 1;
+
     b->freeVertex -= 6;
     b->numVertex += 6;
     glBindBuffer(GL_ARRAY_BUFFER, b->vbo);
@@ -851,15 +835,57 @@ int LE_BatchAdd(lua_L){
     }else{
         glBufferSubData(GL_ARRAY_BUFFER, 2*b->numVertex*sizeof(GLdouble), 12*sizeof(GLdouble), b->vertex+first);
     }
+
+    glBindBuffer(GL_ARRAY_BUFFER, b->ubo);
+    if (reallocate){
+        glBufferData(GL_ARRAY_BUFFER, (b->freeVertex+b->numVertex)*sizeof(GLdouble)*((b->base != &Dyn)?2:4), b->texcoord, GL_STREAM_DRAW);
+    }else{
+        glBufferSubData(GL_ARRAY_BUFFER, 2*b->numVertex*sizeof(GLdouble), 12*sizeof(GLdouble), b->texcoord+first);
+    }
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     return 0;
 }
+
+int LE_DrawBatch(lua_L){
+    if (lua_gettop(L) != 1) Error_print("DrawBatch function takes exactly 1 argument!");
+    luaL_checktype(L, 1, LUA_TTABLE);
+    lua_getvalue(L, 1, "_batch");
+    luaL_checktype(L, -1, LUA_TUSERDATA);
+
+    Batch *b = lua_touserdata(L, -1);
+    if (b->numVertex == 0) return 0;
+    lua_getvalue(L, 1, "color");
+    lua_toA4(L, colors, lua_tonumber);
+    
+    
+    mat4 pop;
+    mat4_clone(pop, Mmat);
+
+    glBindTexture(GL_TEXTURE_2D, b->base->tex);
+    glBindVertexArray(b->vao);
+    
+    glUseProgram(b->type->sh);
+    glUniformMatrix4fv( b->type->uniforms.mod, 1, 0, pop);
+    glUniform4f( b->type->uniforms.clr, colors[0], colors[1], colors[2], colors[3]);
+
+    glDrawArrays(GL_TRIANGLES, 0, b->numVertex*2);
+    
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glUseProgram(0);
+    glBindVertexArray(0);
+    
+
+    return 0;
+}
+
+
 
 int _LE_BatchGC(lua_L){
     luaL_checktype(L, 1, LUA_TTABLE);
     lua_getvalue(L, 1, "_batch");
     Batch *b = lua_touserdata(L, -1);
     free(b->vertex);
+    free(b->texcoord);
     glDeleteBuffers(1, b->vbo);
     glDeleteVertexArrays(1, b->vao);
     return 0;
@@ -1237,6 +1263,7 @@ lua_Table func[] = {
 
     {"LoadBatch", &LE_LoadBatch},
     {"DrawBatch", &LE_DrawBatch},
+    {"BatchAdd",  &LE_BatchAdd},
     {"_BatchGC", &_LE_BatchGC},
 
 
@@ -1302,6 +1329,7 @@ vec2 vert[6] = vec2[](\n\
 );                      \n\
 uniform mat4 mod;       \n\
 uniform mat4 pro;       \n\
+out vec4 color;         \n\
 out vec2 texc;          \n\
 void main()             \n\
 {                       \n\

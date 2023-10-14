@@ -16,7 +16,7 @@ LUALIB_API void (luaL_openlibs) (lua_State *L);
 #define lua_require(L, modname){\
   lua_getglobal(L, "require");\
   lua_pushstring(L, modname);\
-  if(lua_pcall(L, 1, 1, 1)){\
+  if(lua_pcall(L, 1, 1, 0)){\
 	  printf("%s",lua_tostring(L, -1));\
     system("pause");\
   }\

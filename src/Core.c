@@ -30,9 +30,9 @@ lua_State *l, *nl, *ll; // main, thread and loading stacks pointers
 Ihandle *fpst;
 #define FPS_CAP 60
 int fpslmt = FPS_CAP, ftlim = FPS_CAP; 
-short frames = 0;
+unsigned int frames = 0;
 double ft = 0.01;
-int fps = FPS_CAP;
+unsigned int fps = FPS_CAP;
 
 jmp_buf errB; // jump buffer for errors
 #define error_jump() longjmp(errB, 1);
@@ -174,9 +174,8 @@ char *IupGetAttribute(Ihandle *ih, const char *name);
 
 int setCursor(lua_L){
   const char *str = luaL_checkstring(L, 1);
-  printf("%s ", str);
-  IupSetAttribute(cnv, "CURSOR", "NONE");
-  printf("%s\n", IupGetAttribute(cnv, "CURSOR"));
+  
+  IupSetAttribute(cnv, "CURSOR", str);
 
   return 0;
 }
@@ -602,7 +601,7 @@ int LE_counting_Fps(Ihandle* self){
 }
 
 int LE_returning_Focus(Ihandle *self){
-  IupSetFocus(cnv);
+  // IupSetFocus(cnv);
   return 0;
 }
 
@@ -681,39 +680,76 @@ int LE_engine_Booting(int *argc, char ***argv)
 
   
 
-  double cur_t = CpuMs() * 1e-06, prev_t = 0, prevFpsU = cur_t;
-  
-  while (exet == 0){
-    frames++;
-
-    prev_t = cur_t;
-    cur_t = CpuMs()* 1e-06;
-    dt = cur_t - prev_t;
+  double cur_t = CpuMs() * 0.000001, prev_t = 0, prevFpsU = cur_t;
+  double fps_t = 0;
+  if (lua_getglobal(l, "fixedframed")){
     
-    
-    double time_since = cur_t - prevFpsU;
-    IupLoopStep();
-    if (time_since >= 1/ftlim){
+    while (exet == 0){
       
-      fps = (int)((frames/time_since)+0.5);
+      prev_t = cur_t;
+      cur_t = CpuMs()* 0.000001;
+      dt = cur_t - prevFpsU;
       
       
-      frames = 0;
-      prevFpsU = cur_t;
+      double time_since = cur_t - prevFpsU;
+      
+      lua_pushnumber(l, dt);
+      lua_setglobal(l, "dt");
+      frames++;
+      if (time_since >= 1.0/ftlim){
+        
+        IupLoopStep();
+        
+        
+        LE_updating_canvas();
+        IupRedraw(cnv, 0);
+        
+        
+        ft = CpuMs()* 0.000001 - cur_t;
+        
+        prevFpsU = cur_t;
+      }
+      fps_t += dt;
+      if (fps_t >= 1.0){
+        
+        lua_pushnumber(l, frames);
+        lua_setglobal(l, "fps");
+        frames = 0;
+        fps_t = 0;
+      }
+      
+      if (loadScene == NEW_LOAD || loadScene == LOADING_SCENE || loadScene == RELOAD_SCENE)
+        LE_idle_action(NULL);
     }
-    
-    lua_pushnumber(l, dt);
-    lua_setglobal(l, "dt");
-    lua_pushinteger(l, fps);
-    lua_setglobal(l, "fps");
-    
-    LE_updating_canvas();
-      IupRedraw(cnv, 0);
-    
-    if (loadScene == NEW_LOAD || loadScene == LOADING_SCENE || loadScene == RELOAD_SCENE)
-      LE_idle_action(NULL);
-  }
-  goto end;
+    }else{
+      while(exet == 0){
+        prev_t = cur_t;
+        cur_t = CpuMs()* 0.000001;
+
+        IupLoopStep();
+
+        LE_updating_canvas();
+        IupRedraw(cnv, 0);
+        frames++;
+        dt = cur_t - prev_t;
+        ft = CpuMs()* 0.000001 - prev_t;
+
+        lua_pushnumber(l, ft);
+        lua_setglobal(l, "ft");
+        lua_pushnumber(l, dt);
+        lua_setglobal(l, "dt");
+        fps_t += dt;
+        if (fps_t >= 1.0){
+          lua_pushnumber(l, frames);
+          lua_setglobal(l, "fps");
+          fps_t = 0;
+          frames = 0;
+        }
+        if (loadScene == NEW_LOAD || loadScene == LOADING_SCENE || loadScene == RELOAD_SCENE)
+          LE_idle_action(NULL);
+      }
+    }
+
   
   end:;
   IupDestroy(dg);

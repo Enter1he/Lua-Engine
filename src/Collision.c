@@ -139,6 +139,36 @@ int SS_Collide(lua_State *L){ //
     return 1;
 }
 
+int SS_MoveAway(lua_State *L){ // 
+    lua_Number ax, ay, aw, ah;
+    lua_Number bx, by, bw, bh;
+    lua_Number x, y;
+
+    ax = lua_tonumber(L, 1);
+    ay = lua_tonumber(L, 2);
+    aw = lua_tonumber(L, 3);
+    ah = lua_tonumber(L, 4);
+    
+    bx = lua_tonumber(L, 5);
+    by = lua_tonumber(L, 6);
+    bw = lua_tonumber(L, 7);
+    bh = lua_tonumber(L, 8);
+
+    if (ax + aw >= bx)
+        x = ax + aw + 1;
+    if (ax <= bx + bw)
+        x = bx + bw - 1;
+    if (ay + ah >= by)
+        y = ay + ah + 1;
+    if (ay <= by + bh)
+        y = by + bh - 1;
+    
+    lua_pushnumber(L, x);
+    lua_pushnumber(L, y);
+
+    return 2;
+}
+
 static const struct luaL_Reg funcs[] = {
    
     {"CtC", &CC_Collide},
