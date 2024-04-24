@@ -4,17 +4,23 @@ local sqrt, atan2, deg = math.sqrt, math.atan2, math.deg
 
 local sW, sH, aH = _en.screen.w, _en.screen.h
 
+local flower = {
+    pos = {100, 100}
+}
 
 local player = { 
     pos = {100,50};
     origin = {0.5, -0.5};
-    size = {100,100};
+    size = {1,1};
     vel = {0,0,0};
     speed = 100;
     
 };
 Mob.newMob(player)
 Sprite.newSheet(player)
+Sprite.newSimple(flower)
+
+local flowers = Batch.new()
 
 local text = new(
 {   
@@ -28,7 +34,7 @@ local text = new(
 
 
 
-Controls.AddCommand(65307, Close)
+Controls.AddCommand(B.esc, LE.Close)
 
 
 
@@ -43,11 +49,25 @@ local l = Layer.new{}
 function TDS:Load()
     
     text:Load()
-    --flower:Load("Scenes/TDS/res/Flower/Flower.png")
-    player:Load("Scenes/TDS/res/player/TopDownMen",0)
-    l:AddDrawable(text)
-    l:AddDrawable(player)
+    flower:Load("Scenes/TDS/res/Flower/Flower.png")
+    player:Load("Scenes/TDS/res/player/TopDownMen")
     
+    flowers:Load(flower)
+    local x, y = 0,10
+    for i = 1, 70 do
+        
+        flowers:Add(x, y)
+        x = x+10
+        if x > sW then
+            x = 0
+            y = y + 22
+        end
+    end
+    flowers:Show()
+    -- l:AddDrawable(flower)
+    -- l:AddDrawable(text)
+    l:AddDrawable(player)
+    l:AddDrawable(flowers)
 end
 
 function TDS:Update()

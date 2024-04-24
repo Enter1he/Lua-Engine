@@ -7,8 +7,8 @@ local Collide = Collision
 -- end
 local  screen = _en.screen
 
-local flowers = 100; local flocount = flowers;
-local humans = 10
+local flowers = 1; local flocount = flowers;
+local humans = 1
 local zombies = 10 -- numbers of objects
 local npc = {top = {}} 
 local objs = {}  -- individual obj and npc tables
@@ -311,7 +311,7 @@ local fmt = string.format
 function Sim:Update()
     -- print"Update"
 
-
+    dt = 0
     player:Stop()
     if not paused then
 

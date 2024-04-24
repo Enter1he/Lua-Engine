@@ -78,6 +78,7 @@ Sprite = require"classes/Sprite"
 Mob = require"classes/Mob"
 Vector = require"classes/Vector"
 Color = require"classes/Color"
+Batch = require"classes/Batch"
 
 _default = NewScene()
 

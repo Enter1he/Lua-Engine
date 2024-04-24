@@ -7,14 +7,13 @@
 #endif
 
 
-#include "glew.h"
 #include "iupdef.h"
 #include <time.h>
 #include <setjmp.h>
 #include <signal.h>
 #include <stdatomic.h>
 
-#include "Graphics.h"
+#include "src/Graphics/Graphics.h"
 #include "Collision.h"
 #include "Audio.h"
 

@@ -4,6 +4,10 @@ local Batch ={
 
 }
 
+
+local Graphics = Graphics
+local setmetatable = setmetatable
+
 Batch.__gc = Graphics._BatchGC
 
 function Batch.new(new)
@@ -21,6 +25,8 @@ function Batch.new(new)
     
     Load = Load or Graphics.LoadBatch
     Draw = Draw or Graphics.DrawBatch
+    Add = Add or Graphics.BatchAdd
+    Show = Show or Graphics.BatchShow
     PlayAnim = Sprite.PlayAnim
     CopySprite = Sprite.CopySprite
     GetSize = Graphics.GetSize
