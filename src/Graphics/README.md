@@ -1,6 +1,6 @@
 # Graphics
 
-This is official readme reference for Graphics module of LuaEngine
+This is official readme reference for Graphics module of LuaEngine,
 all functions available in the module explained here.
 
 ## Primitives
