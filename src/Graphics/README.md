@@ -31,6 +31,11 @@ Graphics.DrawRect(lined : boolean; x,y,w,h : number) -> nil
 Draws a rectangle on position {x,y} with width and height corresponding to values 'w','h'
 Depending on the value 'lined' object would appear wireframed or filled with current color.
 
+```
+Graphics.DrawQuad(lined : boolean; x1,y1, x2,y2, x3,y3, x4,y4 : number) -> nil
+```
+Draws a quad each point of which is explained with values xn, yn.
+
 
 ```
 Graphics.DrawCircle(lined : boolean; x,y,r : number) -> nil
