@@ -5,7 +5,7 @@ all functions available in the module explained here.
 
 ## Primitives
 
-LuaEngine allows drawing simple primitives 
+LuaEngine allows drawing simple primitives like rectangles and circles.
 
 ```
 Graphics.SetColor( r,g,b,a : number)-> nil
