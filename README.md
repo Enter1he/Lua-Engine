@@ -50,4 +50,4 @@ OpenGL
 
 # Building advice 
 
-makefile does everything for your
+makefile does everything for you
