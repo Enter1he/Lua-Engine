@@ -35,7 +35,7 @@ local dwr = up..right
 local dwl = up..left
 
 
-local Buff = {}
+local Buff = {} -- setting up buffer
 do
     local sBuff = Buff
     local prev;
@@ -52,6 +52,49 @@ do
     Buff = sBuff
     Buff.prev = prev
 end
+
+local tricks = {
+    -- dwn = {
+    --     dwr = {
+    --         rgt = {
+    --             action = "hadouken"
+    --         };
+    --     };
+    -- };
+}
+local lastact = tricks
+--- addtrick("dwn", "dwr", "rgt")
+local function addtrick(name)
+    lastact[name] = lastact[name] or {}
+    lastact = lastact[name]
+    return addtrick
+end
+local function addaction(act)
+    lastact.action = act
+    lastact = tricks
+end
+
+
+addtrick "dwn" "dwr" "rgt" "rgt+lpn"
+addaction "hadouken"
+
+
+
+for k,v in pairs(tricks) do
+    print(k,v)
+end
+-- addtrick "dwn" "dwr" "rgt+lpn" "rgt+lpn"
+-- addaction "hadouken"
+
+local curt = tricks
+local trick = Text.newText{
+    value = "none";
+    size = 16;
+    pos = {100, 100};
+    color = {1,1,1,1}
+}
+
+local main = Layer.new()
 
 local function PrintBuffer(buff)
     
@@ -126,20 +169,25 @@ function Ring:KeyPress(k,down)
     end
     if down then
         
-        inpt = key..(seq~="" and (key~="" and "+"..seq or seq) or "" )
+        inpt = key ..(seq~="" and (key~="" and "+"..seq or seq) or "" )
         
         if Buff[1] ~= inpt  then
             
-            
-            
-            
-            print(inpt)
-            
-            Buff = (Buff[1]~="")and Buff.next or Buff
-            Buff[1] = ""
+            Buff = (Buff[1]~="") and Buff.next or Buff
+            -- Buff[1] = ""
             
             Buff[1] = inpt
+            -- print(Buff[1])
             PrintBuffer(Buff)
+            curt = curt[Buff[1]] or tricks
+            if curt.action then
+                trick.value = curt.action
+                curt = tricks
+            elseif not curt.action then
+                
+                
+            end
+            
         end
         
         buffertime = 0
@@ -149,6 +197,7 @@ function Ring:KeyPress(k,down)
     end
     if buffertime == bufferlim then
         ClearBuffer(Buff)
+        trick.value = "none"
     end
     
 end
@@ -173,10 +222,17 @@ function Ring:KeyRelease(c)
 end
 
 function Ring:Load()
+    trick:Load()
+    main:AddDrawable(trick)
     PrintBuffer(Buff)
 end
 
 function Ring:Update(dt)
+    
+end
+
+function Ring:Draw()
+    main:Draw()
 end
 
 return Ring

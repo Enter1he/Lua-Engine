@@ -11,7 +11,7 @@ void mat4_Ortho(float *out, float left, float right, float bottom, float top, fl
 
 void mat4_Translate2D(float *out, const float *a, float *v);
 
-void mat4_Rotate2D(float *out, float angle);
+void mat4_Rotate2D(float *out, float *in, float angle);
 
 void mat4_Scale2D(float *out, float *a, float *v);
 
@@ -21,6 +21,10 @@ void mat4_clone(float *out, float *a);
 
 void mat4_multiplyM(float *out, float *a, float *b);
 
-void mat4_multiplyM(float *out, float *a, float *b);
+void mat4_multiplyMV2(float *out, float *m, float *v);
+
+void vec2_multiplyVM(float *out, float *v, float *m);
+
+void vec2_Rotate2D(float *out, float angle);
 
 #endif

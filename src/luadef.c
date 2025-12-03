@@ -51,3 +51,29 @@ void stackDumpA(lua_L, int line) {
 	printf("\n");
 	
 };
+
+void lua_arrtofloat(lua_State *L, Table *a, float *arr, int len){
+  lua_Number n = 0;
+  for (int i = 0; i < len; i++){
+    TValue *v = (TValue*)(lua_fastgetint(a, i+1));
+    tonumber(v, &n); 
+    arr[i] = (float)(n);
+  }
+}
+
+TValue * lua_tablevalue(lua_State *L, Table* t, const char* key){
+  TString *str = luaS_new(L, key);
+  TValue *v = (TValue*)(luaH_getstr(t, str));
+  
+  return v;
+}
+
+
+void *touserdata (const TValue *o) {
+  switch (ttype(o)) {
+    case LUA_TUSERDATA: return getudatamem(uvalue(o));
+    case LUA_TLIGHTUSERDATA: return pvalue(o);
+    default: return NULL;
+  }
+}
+

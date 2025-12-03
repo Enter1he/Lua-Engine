@@ -2,8 +2,8 @@
 local shaders = {
     base_vs = -- BASE SHADERS FOR IMAGES
     [[  #version 330 core 
-        layout (location = 1) in vec2 pos; 
-        layout (location = 0) in vec2 txc; 
+        in vec2 pos; 
+        in vec2 txc;
         uniform vec4 clr; 
         uniform mat4 mod; 
         uniform mat4 pro; 
@@ -25,29 +25,21 @@ local shaders = {
         uniform sampler2D tex; 
         void main() 
         { 
-            color = f_clr*texture2D(tex, f_txc); 
+            color = f_clr*texture2D(tex, f_txc);
         }
     ]];
 
     single_vs = 
     [[
         #version 330 core       
-        vec2 vert[6] = vec2[]( 
-            vec2(0, 1),          
-            vec2(1, 1),          
-            vec2(0, 0),          
-            vec2(1, 1),          
-            vec2(0, 0),          
-            vec2(1, 0)           
-        );                       
+        in vec2 pos;
         uniform mat4 mod;        
         uniform mat4 pro;        
         out vec4 color;          
         out vec2 texc;           
         void main()              
-        {                        
-            int id = gl_VertexID; 
-            texc = vert[id];     
+        {                         
+            texc = pos;     
             gl_Position = pro*mod*vec4(texc, 0, 1.0); 
         }
     ]];
@@ -66,7 +58,7 @@ local shaders = {
     -- SHADERS FOR PRIMITIVES
     prim_vs = [[
         #version 330 core 
-        layout (location = 0) in vec2 pos; 
+        in vec2 pos; 
         uniform mat4 mod; 
         uniform mat4 pro; 
         uniform vec4 clr; 
@@ -86,6 +78,63 @@ local shaders = {
         void main() 
         { 
             color = f_clr; 
+        }
+    ]];
+
+    text_vs = -- TEXT SHADERS
+    [[  #version 330 core 
+        in vec2 pos; 
+        in vec2 txc;
+        uniform vec4 clr; 
+        uniform mat4 mod; 
+        uniform mat4 pro; 
+        out vec2 f_txc; 
+        void main() 
+        {  
+            f_txc = txc; 
+            gl_Position = pro*mod*vec4(pos, 0, 1.0);   
+        }
+    ]];
+
+    text_fs = 
+    [[  #version 330 core  
+        in vec2 f_txc; 
+        out vec4 color;
+        uniform vec4 clr;
+        uniform sampler2D tex; 
+        void main() 
+        { 
+            float sample = texture2D(tex, f_txc).a;
+            color = clr*vec4(sample, sample, sample, sample ); 
+        }
+    ]];
+
+    batch_vs = -- batch shaders
+    [[  #version 330 core 
+        in vec2 pos; 
+        in vec2 txc; 
+        uniform vec4 clr; 
+        uniform mat4 mod; 
+        uniform mat4 pro; 
+        out vec4 f_clr; 
+        out vec2 f_txc; 
+        void main() 
+        { 
+            f_clr = clr; 
+            f_txc = txc; 
+            gl_Position = pro*mod*vec4(pos, 0, 1.0);   
+        }
+    ]];
+
+    batch_fs = 
+    [[  #version 330 core 
+        in vec4 f_clr; 
+        in vec2 f_txc; 
+        out vec4 color; 
+        uniform sampler2D tex; 
+        void main() 
+        { 
+            color = f_clr*texture2D(tex, f_txc); 
         }
     ]];
 }

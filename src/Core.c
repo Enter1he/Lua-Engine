@@ -30,7 +30,7 @@ Ihandle *fpst;
 #define FPS_CAP 60
 int fpslmt = FPS_CAP, ftlim = FPS_CAP; 
 unsigned int frames = 0;
-double ft = 0.01;
+float ft = 0.01;
 unsigned int fps = FPS_CAP;
 
 jmp_buf errB; // jump buffer for errors
@@ -587,7 +587,7 @@ int LE_counting_Fps(Ihandle* self){
   
   if (frames == 0) return 0;
   ft = 1000.0/frames;
-  fps = (double)frames;
+  fps = (float)frames;
   frames = 1;
 
   lua_pushnumber(l, fps);
@@ -672,15 +672,17 @@ int LE_engine_Booting(int *argc, char ***argv)
   IupShow(dg);
   IupSetFocus(cnv);
   LONGLONG fpst_c = 1;
-  double dt = 1.0/ftlim;
+  float dt = 1.0/ftlim;
 
   exet = setjmp(errB);
   if (exet) { goto end;}
 
   
 
-  double cur_t = CpuMs() * 0.000001, prev_t = 0, prevFpsU = cur_t;
-  double fps_t = 0;
+  float cur_t = CpuMs() * 0.000001, prev_t = 0, prevFpsU = cur_t;
+  float fps_t = 0;
+  float dtlim = 1.0/ftlim;
+  float time_since = 0;
   if (lua_getglobal(l, "fixedframed")){
     
     while (exet == 0){
@@ -690,24 +692,27 @@ int LE_engine_Booting(int *argc, char ***argv)
       dt = cur_t - prevFpsU;
       
       
-      double time_since = cur_t - prevFpsU;
+      time_since += cur_t - prevFpsU;
       
-      lua_pushnumber(l, dt);
-      lua_setglobal(l, "dt");
-      frames++;
-      if (time_since >= 1.0/ftlim){
+      
+      IupRedraw(cnv, 0);
+      if (time_since > dtlim){
         
         IupLoopStep();
-        
+        lua_pushnumber(l, dtlim);
+        lua_setglobal(l, "dt");
         
         LE_updating_canvas();
-        IupRedraw(cnv, 0);
         
-        
+        time_since -= dtlim;
         ft = CpuMs()* 0.000001 - cur_t;
         
         prevFpsU = cur_t;
       }
+
+      frames++;
+
+      
       fps_t += dt;
       if (fps_t >= 1.0){
         

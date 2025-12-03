@@ -7,7 +7,7 @@ EmptyFunc = function() end
 
 require"modules/Controls"
 
-Fonts = Fonts or "C:/Windows/Fonts/" -- Windows font's folder
+Fonts = Fonts or "modules/Fonts/" -- Windows font's folder
 
 
 local screen = _en.screen

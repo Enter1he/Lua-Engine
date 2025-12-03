@@ -3,10 +3,8 @@
 
 #include "src/Graphics/Graphics.h"
 
-#include "include/im.h"
-#include "include/im_image.h"
-#include "include/im_convert.h"
-#include "include/im_process.h"
+
+
 
 int LE_LoadSingleSprite(lua_L);
 int LE_LoadSpriteSheet(lua_L);

@@ -8,9 +8,9 @@ extern const size_t maxVertex;
 typedef struct _Batch{
     size_t numObj, freeObj, totalObj;
     GLuint vbo, ubo, vao;
-    GLdouble *vertex, *texcoord;
+    GLfloat *vertex, *texcoord;
+    int *objType;
     Drawable *base;
-    struct Entity* type;
 }Batch;
 
 

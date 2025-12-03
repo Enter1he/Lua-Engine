@@ -1,14 +1,25 @@
 #ifndef LUADEF_H
 #define LUADEF_H
 
-#include "include/lua.h"
-#include "include/lauxlib.h"
+#include <assert.h>
+
+#define lua_assert(c) assert(c)
+
+#include "lua-internals/src/lua.h"
+#include "lua-internals/src/lauxlib.h"
+#include "lua-internals/src/luacore.h"
 #include <stdlib.h>
 #include <stdio.h>
 
+
 LUALIB_API void (luaL_openlibs) (lua_State *L);
 
+#ifdef _WIN32
 #define LUA_DLL __declspec(dllexport)
+#else
+#define LUA_DLL
+#endif
+
 #define lua_L lua_State *L
 #define lua_Table static const struct luaL_Reg  // making big thing small
 #define lua_eoT {NULL, NULL} 				 	//
@@ -21,6 +32,8 @@ LUALIB_API void (luaL_openlibs) (lua_State *L);
     system("pause");\
   }\
 }
+
+#define lua_tofloat(L, idx) ((float)(lua_tonumber(L, idx)))
 
 #define Error_print(str,...) {printf(str,##__VA_ARGS__); printf("\n"); system("pause");}
 
@@ -50,7 +63,6 @@ LUALIB_API void (luaL_openlibs) (lua_State *L);
 void lua_tableContets(lua_L, int idx);
 
 #define lua_cleanargs(L, num) {int top = lua_gettop(L); if (top > num) lua_pop(L, top-num);}
-
 
 
 #define lua_getA3(L){\
@@ -85,5 +97,12 @@ void lua_tableContets(lua_L, int idx);
 void stackDumpA(lua_L, int line);
 
 #define stackDump(L) stackDumpA(L, __LINE__)
+
+void lua_arrtofloat(lua_State *L, Table *a, float *arr, int len);
+TValue * lua_tablevalue(lua_State *L, Table* t, const char* key);
+
+void *touserdata (const TValue *o);
+
+
 
 #endif

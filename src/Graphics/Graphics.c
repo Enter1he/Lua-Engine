@@ -6,7 +6,9 @@
 // #define DEBUG 1
 // #undef DEBUG
 
-const GLdouble 
+
+
+const GLfloat 
 gvertex[] = {
     
     0, 1,
@@ -35,9 +37,9 @@ tverts[] = {
     
 };
 
-struct Entity Dyn, Sta, Prim;
+struct Entity Dyn, Sta, Prim, Bat, Text;
 
-GLdouble colors[24] = {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, texcoords[12], text_uv[12]; // arrays that change over time
+GLfloat colors[24] = {1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1}, texcoords[12], text_uv[12]; // arrays that change over time
 mat4 Pmat = {};
 mat4 Mmat = {};
 
@@ -104,34 +106,39 @@ void Graphics_SetMatrix4Layer(float* mat){
     glUniformMatrix4fv(Dyn.uniforms.pro, 1, 0, mat);
     glUseProgram(Sta.sh);
     glUniformMatrix4fv(Sta.uniforms.pro, 1, 0, mat);
+    glUseProgram(Bat.sh);
+    glUniformMatrix4fv(Sta.uniforms.pro, 1, 0, mat);
     glUseProgram(0);
 }
 
+
 int LE_DrawLayer(lua_L){
 
-    lua_getvalue(L, 1, "pos");
-    lua_getidx(L, -1, 1);
-    lua_getidx(L, -2, 2);
-
+    vec2 n = {0.f,0.f};
+    
+    TValue * v = index2value(L,1);
+    Table * t = hvalue(v);
+    TValue * pos = lua_tablevalue(L, t, "pos");
+    lua_arrtofloat(L, hvalue(pos), n, 2);
+    
     mat4 pop;
-    vec2 n = {-lua_tonumber(L, -2), -lua_tonumber(L, -1)};
     mat4_clone(pop, Pmat);
-
     mat4_Translate2D(pop, pop, n);
     
-    lua_getvalue(L, 1, "size");
-    lua_getA2(L);
     
-    n[0] = lua_tonumber(L, -2), n[1] = lua_tonumber(L, -1);
+    Table * size = hvalue(lua_tablevalue(L, t, "size"));
+    lua_arrtofloat(L, size, n, 2);
+    
     mat4_Scale2D(pop, pop, n);
+      
 
-    lua_getvalue(L, 1, "blend");
-    int check = lua_tointeger(L, -1);
-    int src = (check) ? GL_SRC_COLOR : GL_SRC_ALPHA, one = (check) ? GL_ONE_MINUS_SRC_COLOR : GL_ONE_MINUS_SRC_ALPHA;
+    TValue * b = lua_tablevalue(L, t, "blend");
+    int check = ttistrue(b);
+    int src = (check) ? GL_SRC_COLOR : GL_SRC_ALPHA, 
+    one = (check) ? GL_ONE_MINUS_SRC_COLOR : GL_ONE_MINUS_SRC_ALPHA;
 
-    lua_pop(L, 7);
+    lua_settop(L,2);
 
-    
     Graphics_SetMatrix4Layer(pop);
     for (int i = 1; i <= lua_rawlen(L,2); i++){
         lua_geti(L, 2, i);
@@ -169,22 +176,22 @@ int LE_SetColor(lua_L){
     int args = lua_gettop(L);
     Graphics_checkargs(L, "Graphics.SetColor", 4, "nnnn");
     glUseProgram(Prim.sh);
-    glUniform4f(Prim.uniforms.clr, luaL_checknumber(L,1), luaL_checknumber(L,2), luaL_checknumber(L,3), luaL_checknumber(L,4));
+    glUniform4f(Prim.uniforms.clr, (float)luaL_checknumber(L,1), (float)luaL_checknumber(L,2), (float)luaL_checknumber(L,3), (float)luaL_checknumber(L,4));
     glUseProgram(0);
     return 0;
 }
 
-double *point = 0; size_t psize= 0;
+float *point = 0; size_t psize= 0;
 int LE_DrawLine(lua_L){
     #ifdef DEBUG
         int args = Graphics_checkargs(L, "Graphics.DrawLine", 4, "nnnn");
     #else
         int args = lua_gettop(L);
     #endif
-    double x1 = luaL_checknumber(L, 1), 
-            y1 = luaL_checknumber(L, 2), 
-            x2 = luaL_checknumber(L, 3),
-            y2 = luaL_checknumber(L, 4);
+    float x1 = (float)luaL_checknumber(L, 1), 
+            y1 = (float)luaL_checknumber(L, 2), 
+            x2 = (float)luaL_checknumber(L, 3),
+            y2 = (float)luaL_checknumber(L, 4);
     lua_settop(L, args);
 
     
@@ -193,7 +200,7 @@ int LE_DrawLine(lua_L){
 
     glBindVertexArray(Prim.vao);
     glBindBuffer(GL_ARRAY_BUFFER, Prim.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLdouble)*4, point);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLfloat)*4, point);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glUseProgram(Prim.sh);
@@ -221,23 +228,23 @@ int LE_DrawLines(lua_L){
         Error_print("Graphics.DrawLines: length of array must be more or even 4 numbers!"); 
         return 0;
     }
-    if (len > psize/sizeof(GLdouble)){
-        Error_print("Graphics.DrawLines: length of array is too much for engine! Less than %d required", psize/sizeof(GLdouble))
+    if (len > psize/sizeof(GLfloat)){
+        Error_print("Graphics.DrawLines: length of array is too much for engine! Less than %d required", psize/sizeof(GLfloat))
         return 0;
     }
     
     for (int i = 0; i < len; i+=2){
         lua_geti(L, 1, i+1);
         lua_geti(L, 1, i+2);
-        point[i] = lua_tonumber(L, -2);
-        point[i+1]   = lua_tonumber(L, -1);
+        point[i] = lua_tofloat(L, -2);
+        point[i+1]   = lua_tofloat(L, -1);
         lua_settop(L, 1);
     }
 
 
     glBindVertexArray(Prim.vao);
     glBindBuffer(GL_ARRAY_BUFFER, Prim.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLdouble)*len, point);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLfloat)*len, point);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glUseProgram(Prim.sh);
@@ -257,15 +264,15 @@ int LE_DrawLines(lua_L){
 #define invtwopi 0.15915494309189
 #define threehalfpi 4.7123889803847
 
-static double cos_32s(double x)
+static float cos_32s(float x)
 {
-    const double c1= 0.99940307;
-    const double c2=-0.49558072;
-    const double c3= 0.03679168;
+    const float c1= 0.99940307;
+    const float c2=-0.49558072;
+    const float c3= 0.03679168;
     x *= x;
     return (c1 + x*(c2 + c3 * x));
 }
-static double apcos(double angle){
+static float apcos(float angle){
     //clamp to the range 0..2pi
     angle=angle-(int)(angle*invtwopi)*twopi;
     angle=angle>0.f?angle:-angle;
@@ -275,11 +282,11 @@ static double apcos(double angle){
     if(angle<threehalfpi) return -cos_32s(angle-pi);
     return cos_32s(twopi-angle);
 }
-static inline double apsin(double angle){
+static inline float apsin(float angle){
     return apcos(halfpi-angle);
 }
 
-// DrawCircle(lined: bool, x: double, y: double, raius: double)
+// DrawCircle(lined: bool, x: float, y: float, raius: float)
 
 int LE_DrawCircle(lua_L){
     #ifdef DEBUG
@@ -288,18 +295,18 @@ int LE_DrawCircle(lua_L){
         int args = lua_gettop(L);
     #endif
     args = -args;
-    double px = lua_tonumber(L, ++args), py = lua_tonumber(L, ++args);
-    double radius = lua_tonumber(L, ++args);
+    float px = lua_tofloat(L, ++args), py = lua_tofloat(L, ++args);
+    float radius = lua_tofloat(L, ++args);
     int step = 32;
     
     
     char change = 0;
-    double angle = twopi/step;
+    float angle = twopi/step;
     GLenum mode = (lua_toboolean(L,1))? GL_TRIANGLE_FAN : GL_LINE_LOOP;
     
     int j = 0;
     for (int i = step; i > 0; i--){
-        double x = radius*apcos(i*angle), y = radius*apsin(i*angle);
+        float x = radius*apcos(i*angle), y = radius*apsin(i*angle);
         point[j] = px+x; point[++j] = py+y;  
         j++;
     }
@@ -328,7 +335,7 @@ static int LEx_getArr(lua_L, size_t size){
     return size;
 }
 
-//DrawQuad(lined: bool, array: double[4])
+//DrawQuad(lined: bool, array: float[8])
 int LE_DrawQuad(lua_L){
     #ifdef DEBUG
         int args = Graphics_checkargs(L, "Graphics.DrawQuad", 2, "bt");
@@ -336,18 +343,19 @@ int LE_DrawQuad(lua_L){
         int args = lua_gettop(L);
     #endif
     GLenum mode = (lua_toboolean(L,1))? GL_TRIANGLE_STRIP: GL_LINE_LOOP;
-    lua_remove(L, 1);
+    luaL_checktype(L,2, LUA_TTABLE);
     for (size_t i = 0; i < 8; i++){
-        lua_getidx(L, 1, i+1);
+        lua_getidx(L, 2, i+1);
     }
-    lua_Number x1 = lua_tonumber(L,3),
-                y1 = lua_tonumber(L,4),
-                x2 = lua_tonumber(L,5),
-                y2 = lua_tonumber(L,6),
-                x3 = lua_tonumber(L,7),
-                y3 = lua_tonumber(L,8),
-                x4 = lua_tonumber(L,9),
-                y4 = lua_tonumber(L,10);
+    // stackDumpA(L, 347);
+    float   x1 = lua_tofloat(L,3),
+            y1 = lua_tofloat(L,4),
+            x2 = lua_tofloat(L,5),
+            y2 = lua_tofloat(L,6),
+            x3 = lua_tofloat(L,7),
+            y3 = lua_tofloat(L,8),
+            x4 = lua_tofloat(L,9),
+            y4 = lua_tofloat(L,10);
     lua_settop(L, 2);
 
     
@@ -358,7 +366,7 @@ int LE_DrawQuad(lua_L){
 
     glBindVertexArray(Prim.vao);
     glBindBuffer(GL_ARRAY_BUFFER, Prim.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLdouble)*8, point);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLfloat)*8, point);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glUseProgram(Prim.sh);
@@ -371,21 +379,17 @@ int LE_DrawQuad(lua_L){
     return 0;
 }
 
-//DrawRect(lined: bool, x1: double, y1: double, x2: double, y2: double)
+//DrawRect(lined: bool, x1: float, y1: float, x2: float, y2: float)
 int LE_DrawRect(lua_L){
-    #ifdef DEBUG
-        int args = Graphics_checkargs(L, "Graphics.DrawRect", 5, "bnnnn");
-    #else
     int args = lua_gettop(L);
-    #endif
 
     int lined = lua_toboolean(L,1);
     GLenum mode = (lined)? GL_TRIANGLE_STRIP: GL_LINE_LOOP;
     args = -args;
-    double x = lua_tonumber(L,++args),
-        y = lua_tonumber(L,++args),
-        x2 = lua_tonumber(L,++args),
-        y2 = lua_tonumber(L,++args);
+    float x = lua_tofloat(L,++args),
+        y = lua_tofloat(L,++args),
+        x2 = lua_tofloat(L,++args),
+        y2 = lua_tofloat(L,++args);
     
     point[0] = x; point[1] = y;
     point[2] = x; point[3] = y2;
@@ -395,11 +399,48 @@ int LE_DrawRect(lua_L){
     
     glBindVertexArray(Prim.vao);
     glBindBuffer(GL_ARRAY_BUFFER, Prim.vbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLdouble)*8, point);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLfloat)*8, point);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     glUseProgram(Prim.sh);
     glDrawArrays(mode, 0, 4);
+    
+    glUseProgram(0);
+    glBindVertexArray(0);
+
+    return 0;
+}
+
+int LE_DrawTriangle(lua_L){
+    int args = lua_gettop(L);
+
+    GLenum mode = (lua_toboolean(L,1))? GL_TRIANGLE_STRIP: GL_LINE_LOOP;
+    luaL_checktype(L,2, LUA_TTABLE);
+    for (size_t i = 0; i < 6; i++){
+        lua_getidx(L, 2, i+1);
+    }
+    // stackDumpA(L, 347);
+    float   x1 = lua_tofloat(L,3),
+            y1 = lua_tofloat(L,4),
+            x2 = lua_tofloat(L,5),
+            y2 = lua_tofloat(L,6),
+            x3 = lua_tofloat(L,7),
+            y3 = lua_tofloat(L,8);
+    lua_settop(L, 2);
+
+    
+    point[0] = x1; point[1] = y1;
+    point[2] = x2; point[3] = y2;
+    point[4] = x3; point[5] = y3;
+
+    glBindVertexArray(Prim.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, Prim.vbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(GLfloat)*6, point);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    glUseProgram(Prim.sh);
+    glDrawArrays(mode, 0, 4);
+
     
     glUseProgram(0);
     glBindVertexArray(0);
@@ -456,6 +497,7 @@ lua_Table func[] = {
     {"DrawCircle", &LE_DrawCircle},
     {"DrawQuad", &LE_DrawQuad},
     {"DrawRect", &LE_DrawRect},
+    {"DrawTriangle", &LE_DrawTriangle},
 
 
     {NULL, NULL}
@@ -561,6 +603,7 @@ void Graphics_checkShader(GLuint sh){
         // Provide the infolog in whatever manor you deem best.
         // Exit with failure.
         glDeleteShader(sh); // Don't leak the shader.
+        free(errorLog);
         return;
     }
 
@@ -587,16 +630,19 @@ void Graphics_makeShaderProg(GLuint* sh, const char** vs, const char** fs){
     
 }
 
-void Graphics_SetUniforms(struct Entity *e){
+void Graphics_SetEntity(struct Entity *e){
     e->uniforms.pro = glGetUniformLocation(e->sh, "pro");
     e->uniforms.mod = glGetUniformLocation(e->sh, "mod");
     e->uniforms.clr = glGetUniformLocation(e->sh, "clr");
+    e->attr.pos = glGetAttribLocation(e->sh, "pos");
+    e->attr.txc = glGetAttribLocation(e->sh, "txc");
     glUseProgram(e->sh);
     glUniformMatrix4fv( e->uniforms.pro, 1, 0, Pmat);
     glUniformMatrix4fv( e->uniforms.mod, 1, 0, Mmat);
     glUniform4f( e->uniforms.clr, 1.0, 1.0, 1.0, 1.0);
     glUseProgram(0);
 }
+
 
 #define LetShaderString(name)\
     lua_getfield(L, -1, #name "_vs");\
@@ -609,20 +655,38 @@ void Graphics_SetUniforms(struct Entity *e){
 int luaopen_Graphics(lua_L)
 {
     size_t t = lua_gettop(L);
+    
+    #ifndef __EMSCRIPTEN__
+    
+    if (glewInit() != GLEW_OK){
+        printf("something wrong with glew!");
 
+    }else
+        printf("GLEW is fine!");
+    
+    
     lua_require(L, "modules/shaders");
+    #else
+        lua_require(L, "modules/webshaders");
+    #endif
+
+    
+
 
     LetShaderString(base)
     LetShaderString(single)
     LetShaderString(prim)
+    LetShaderString(batch)
+    LetShaderString(text)
 
-
-    if (glewInit() != GLEW_OK){
-        printf("something wrong with glew!");
-    };
+    #ifndef __EMSCRIPTEN__
     glEnable(GL_PROGRAM_POINT_SIZE);
+    #endif
+    
     Graphics_makeShaderProg(&Dyn.sh, &base_vs, &base_fs);
     Graphics_makeShaderProg(&Sta.sh, &single_vs, &single_fs);
+    Graphics_makeShaderProg(&Bat.sh, &batch_vs, &batch_fs);
+    Graphics_makeShaderProg(&Text.sh, &text_vs, &text_fs);
     
     Graphics_makeShaderProg(&Prim.sh, &prim_vs, &prim_fs);
 
@@ -636,12 +700,16 @@ int luaopen_Graphics(lua_L)
 
     mat4_Ortho(Pmat, 0, lua_tointeger(L, -2), lua_tointeger(L, -1), 0, 1, 0);
     
-    Graphics_SetUniforms(&Prim);
-    Graphics_SetUniforms(&Dyn);
-    Graphics_SetUniforms(&Sta);
+    Graphics_SetEntity(&Prim);
+    Graphics_SetEntity(&Dyn);
+    Graphics_SetEntity(&Sta);
+    Graphics_SetEntity(&Bat);
+    Graphics_SetEntity(&Text);
+
+
     lua_settop(L, t);
 
-    psize = sizeof(GLdouble)*64;
+    psize = sizeof(GLfloat)*64;
     point = malloc(psize);
     
     glUseProgram(Sta.sh);  
@@ -650,14 +718,11 @@ int luaopen_Graphics(lua_L)
 
     glBindVertexArray(Sta.vao);
     glBindBuffer(GL_ARRAY_BUFFER, Sta.vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(colors), NULL, GL_STATIC_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(texcoords), gvertex);
-    glBufferSubData(GL_ARRAY_BUFFER, sizeof(texcoords), sizeof(texcoords), gvertex+12);
-    glVertexAttribPointer(0, 2, GL_DOUBLE, GL_TRUE, 2*sizeof(GLdouble), 0);
-    glVertexAttribPointer(1, 2, GL_DOUBLE, GL_TRUE, 2*sizeof(GLdouble), (void*)(sizeof(texcoords)));
+    glBufferData(GL_ARRAY_BUFFER, sizeof(texcoords), gvertex, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(Sta.attr.pos, 2, GL_FLOAT, GL_TRUE, 2*sizeof(GLfloat), 0);
     
-    glEnableVertexAttribArray ( 0 );
-    glEnableVertexAttribArray ( 1 );
+    glEnableVertexAttribArray ( Sta.attr.pos );
     
 
     
@@ -667,14 +732,14 @@ int luaopen_Graphics(lua_L)
 
     glBindVertexArray(Dyn.vao);
     glBindBuffer(GL_ARRAY_BUFFER, Dyn.vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(colors)*2, NULL, GL_DYNAMIC_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(texcoords), gvertex);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(colors), gvertex, GL_DYNAMIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(texcoords), NULL);
 
-    glVertexAttribPointer(0, 2, GL_DOUBLE, GL_TRUE, 2*sizeof(GLdouble), 0);
-    glVertexAttribPointer(1, 2, GL_DOUBLE, GL_TRUE, 2*sizeof(GLdouble), (void*)(sizeof(texcoords)));
+    glVertexAttribPointer(Dyn.attr.txc, 2, GL_FLOAT, GL_TRUE, 2*sizeof(GLfloat), 0);
+    glVertexAttribPointer(Dyn.attr.pos, 2, GL_FLOAT, GL_TRUE, 2*sizeof(GLfloat), (void*)(sizeof(texcoords)));
     
-    glEnableVertexAttribArray ( 0 );
-    glEnableVertexAttribArray ( 1 );
+    glEnableVertexAttribArray ( Dyn.attr.txc );
+    glEnableVertexAttribArray ( Dyn.attr.pos );
     
     
 
@@ -687,9 +752,26 @@ int luaopen_Graphics(lua_L)
     glBufferData(GL_ARRAY_BUFFER, psize, NULL, GL_DYNAMIC_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(texcoords), gvertex);
     
-    glVertexAttribPointer(0, 2, GL_DOUBLE, GL_TRUE, 2*sizeof(GLdouble), 0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_TRUE, 2*sizeof(GLfloat), 0);
     
-    glEnableVertexAttribArray ( 0 );
+    glEnableVertexAttribArray ( Prim.attr.pos );
+
+
+
+    glUseProgram(Text.sh);
+    glGenVertexArrays(1, &Text.vao);
+    glGenBuffers(1, &Text.vbo);
+
+    glBindVertexArray(Text.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, Text.vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(colors), gvertex, GL_DYNAMIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(texcoords), NULL);
+
+    glVertexAttribPointer(Text.attr.txc, 2, GL_FLOAT, GL_TRUE, 2*sizeof(GLfloat), 0);
+    glVertexAttribPointer(Text.attr.pos, 2, GL_FLOAT, GL_TRUE, 2*sizeof(GLfloat), (void*)(sizeof(texcoords)));
+    
+    glEnableVertexAttribArray ( Text.attr.txc );
+    glEnableVertexAttribArray ( Text.attr.pos );
 
     glUseProgram(0);
     glBindVertexArray(0);

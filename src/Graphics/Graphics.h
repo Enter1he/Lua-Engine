@@ -3,39 +3,54 @@
 #ifndef GRAPHICS_H
 #define GRAPHICS_H
 
-#define GLEW_STATIC
+
 
 #include "src/luadef.h"
 #include "src/Graphics/mat4.h"
-#include "src/Graphics/glew.h"
+#ifdef __EMSCRIPTEN__
+    #include <emscripten/html5_webgl.h>
+
+    #include <webgl/webgl2.h>
+
+#else
+    #define GLEW_STATIC
+    #include "src/Graphics/glew.h"
+    #include <GL/gl.h>
+#endif
+
+
+
+#ifdef _WIN32
 #include <windows.h>
+#endif
 
-
-
-extern const GLdouble gvertex[24], tverts[12];
+extern const GLfloat gvertex[24], tverts[12];
 
 extern struct Entity{
     GLuint vao, vbo, sh;
     struct {
-        GLuint pnt, clr, pro, mod;
+        GLint pnt, clr, pro, mod;
     }uniforms;
-}Dyn, Sta, Prim;
+    struct {
+        GLint pos, txc;
+    }attr;
+}Dyn, Sta, Prim, Bat, Text;
 
-extern GLdouble colors[24], texcoords[12], text_uv[12]; // arrays that change over time
+extern GLfloat colors[24], texcoords[12], text_uv[12]; // arrays that change over time
 extern mat4 Pmat;
 extern mat4 Mmat;
 
 typedef struct _Drawable{
     GLuint tex;
-    size_t width, height;
+    int width, height;
     lua_CFunction method;
-    lua_Number **src;
+    float **src;
 }Drawable;
 
 
 
 typedef struct _Vertex{
-    GLdouble pos[2], uv[4], color[4];
+    GLfloat pos[2], uv[4], color[4];
 }Vertex;
 
 #include "src/Graphics/Text.h"
